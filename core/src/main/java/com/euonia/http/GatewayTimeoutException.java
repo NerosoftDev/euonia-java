@@ -1,0 +1,30 @@
+package com.euonia.http;
+
+/**
+ * The GatewayTimeoutException class represents an HTTP 504 Gateway Timeout error.
+ * It extends the HttpStatusException class and provides constructors for creating instances of this exception with a specific message and an optional cause.
+ */
+public class GatewayTimeoutException extends HttpStatusException {
+
+    /**
+     * Creates a new GatewayTimeoutException with the specified message.
+     * This constructor allows for creating an exception with a specific message, providing more detailed error information when the exception is thrown.
+     *
+     * @param message The detail message for the exception.
+     */
+    public GatewayTimeoutException(String message) {
+        super(504, message);
+    }
+
+    /**
+     * Creates a new GatewayTimeoutException with the specified message and cause.
+     * This constructor allows for creating an exception with a specific message and cause, providing more detailed error information when the exception is thrown.
+     *
+     * @param message The detail message for the exception.
+     * @param cause The cause of the exception.
+     */
+    public GatewayTimeoutException(String message, Throwable cause) {
+        super(504, message, cause);
+    }
+
+}

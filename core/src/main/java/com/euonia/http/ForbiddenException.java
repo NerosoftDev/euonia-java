@@ -1,0 +1,30 @@
+package com.euonia.http;
+
+/**
+ * The ForbiddenException class represents an HTTP 403 Forbidden error.
+ * It extends the HttpStatusException class and provides constructors for creating instances of this exception with a specific message and an optional cause.
+ */
+public class ForbiddenException  extends HttpStatusException {
+
+    /**
+     * Creates a new ForbiddenException with the specified message.
+     * This constructor allows for creating an exception with a specific message, providing more detailed error information when the exception is thrown.
+     *
+     * @param message The detail message for the exception.
+     */
+    public ForbiddenException(String message) {
+        super(403, message);
+    }
+
+    /**
+     * Creates a new ForbiddenException with the specified message and cause.
+     * This constructor allows for creating an exception with a specific message and cause, providing more detailed error information when the exception is thrown.
+     *
+     * @param message The detail message for the exception.
+     * @param cause The cause of the exception.
+     */
+    public ForbiddenException(String message, Throwable cause) {
+        super(403, message, cause);
+    }
+
+}
