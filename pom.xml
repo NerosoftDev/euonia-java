@@ -10,6 +10,7 @@
     <modules>
         <module>core</module>
         <module>osba</module>
+        <module>domain</module>
     </modules>
 
     <name>euonia-parent</name>
