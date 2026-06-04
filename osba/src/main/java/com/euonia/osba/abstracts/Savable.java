@@ -1,4 +1,4 @@
-package com.euonia.osba;
+package com.euonia.osba.abstracts;
 
 /**
  * Marks an object that can be saved to a database or other persistent storage.
