@@ -7,13 +7,16 @@ import com.euonia.osba.rules.RuleManager;
 import com.euonia.osba.rules.Rules;
 import com.euonia.reflection.FieldDataManager;
 import com.euonia.reflection.PropertyInfo;
+import com.euonia.reflection.PropertyInfoManager;
 import com.euonia.security.UnauthorizedAccessException;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable {
     private final List<PropertyInfo<?>> changedProperties = new ArrayList<>();
@@ -339,6 +342,25 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
             this.businessObject = null;
         }
 
+    }
+    // endregion
+
+    // region Register property
+    @SuppressWarnings("unchecked")
+    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, PropertyInfo<V> propertyInfo) {
+        return (PropertyInfo<V>) PropertyInfoManager.registerProperty(type, propertyInfo);
+    }
+
+    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName) {
+        return registerProperty(type, new PropertyInfo<V>(propertyName));
+    }
+
+    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName) {
+        return registerProperty(type, new PropertyInfo<>(propertyName, friendlyName, null));
+    }
+
+    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName, V defaultValue) {
+        return registerProperty(type, new PropertyInfo<>(propertyName, friendlyName, defaultValue));
     }
     // endregion
 }
