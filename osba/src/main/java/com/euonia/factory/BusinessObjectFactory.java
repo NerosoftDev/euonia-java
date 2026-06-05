@@ -1,11 +1,9 @@
 package com.euonia.factory;
 
 import com.euonia.factory.annotation.*;
-import com.euonia.osba.EditableObject;
-import com.euonia.osba.ExecutableObject;
-import com.euonia.osba.ObjectEditState;
-import com.euonia.osba.ReadOnlyObject;
+import com.euonia.osba.*;
 import com.euonia.reflection.ObjectReflector;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -29,7 +27,7 @@ public class BusinessObjectFactory implements ObjectFactory {
         var method = ObjectReflector.findFactoryMethod(type, FactoryCreate.class, criteria);
         var target = getObjectInstance(type);
         if (target instanceof EditableObject editableObject) {
-
+            editableObject.markAsNew();
         }
 
         invoke(method, target, criteria);
@@ -64,8 +62,7 @@ public class BusinessObjectFactory implements ObjectFactory {
     public <T> T save(Class<T> type, T target) {
         Method method = switch (target) {
             case EditableObject editableObject -> switch (editableObject.getEditState()) {
-                case ObjectEditState.NEW ->
-                    ObjectReflector.findFactoryMethod(type, FactoryInsert.class, new Object[0]);
+                case ObjectEditState.NEW -> ObjectReflector.findFactoryMethod(type, FactoryInsert.class, new Object[0]);
                 case ObjectEditState.CHANGED ->
                     ObjectReflector.findFactoryMethod(type, FactoryUpdate.class, new Object[0]);
                 case ObjectEditState.DELETED ->
@@ -109,8 +106,8 @@ public class BusinessObjectFactory implements ObjectFactory {
             }
             if (object == null) {
                 var constructors = Arrays.stream(type.getDeclaredConstructors())
-                        .sorted((a, b) -> Integer.compare(b.getParameterCount(), a.getParameterCount()))
-                        .toList();
+                                         .sorted((a, b) -> Integer.compare(b.getParameterCount(), a.getParameterCount()))
+                                         .toList();
 
                 var ctor = constructors.stream().findFirst().orElseThrow();
 
@@ -126,10 +123,15 @@ public class BusinessObjectFactory implements ObjectFactory {
                     object = (T) ctor.newInstance(args);
                 }
             }
+
+            if (object instanceof UseBusinessContext businessObject) {
+                businessObject.setBusinessContext(new BusinessContext(beanFactory, this::getObjectInstance));
+            }
+
             return object;
 
         } catch (IllegalAccessException | IllegalArgumentException | InstantiationException
-                | InvocationTargetException e) {
+                 | InvocationTargetException e) {
             throw new RuntimeException("Failed to create instance of " + type.getName(), e);
         }
 
@@ -140,7 +142,7 @@ public class BusinessObjectFactory implements ObjectFactory {
             method.invoke(target, criteria);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(
-                    "Failed to invoke method: " + method.getName() + " on target: " + target.getClass().getName(), e);
+                "Failed to invoke method: " + method.getName() + " on target: " + target.getClass().getName(), e);
         }
     }
 
