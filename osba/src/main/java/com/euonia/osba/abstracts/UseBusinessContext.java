@@ -1,4 +1,6 @@
-package com.euonia.osba;
+package com.euonia.osba.abstracts;
+
+import com.euonia.osba.BusinessContext;
 
 /**
  * Marks an object that participates in OSBA business-context propagation.
