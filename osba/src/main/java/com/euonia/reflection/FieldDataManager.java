@@ -136,4 +136,8 @@ public class FieldDataManager {
             }
         }
     }
+
+    public boolean isBusy() {
+        return fieldData.values().stream().anyMatch(FieldData::isBusy);
+    }
 }

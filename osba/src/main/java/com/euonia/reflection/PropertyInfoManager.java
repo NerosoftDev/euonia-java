@@ -38,7 +38,7 @@ public class PropertyInfoManager {
                          .orElse(null);
     }
 
-    public synchronized static void registerProperty(Type type, PropertyInfo<?> propertyInfo) {
+    public synchronized static PropertyInfo<?> registerProperty(Type type, PropertyInfo<?> propertyInfo) {
         var list = getPropertyListCache(type);
         if (list.isLocked()) {
             throw new IllegalStateException("Cannot register property after the list has been locked.");
@@ -48,5 +48,6 @@ public class PropertyInfoManager {
             throw new IllegalStateException("Property with name '" + propertyInfo.getName() + "' is already registered for type " + type.getTypeName());
         }
         list.add(propertyInfo);
+        return propertyInfo;
     }
 }

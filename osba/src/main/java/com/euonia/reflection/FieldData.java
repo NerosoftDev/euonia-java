@@ -64,7 +64,7 @@ public class FieldData<T> implements TrackableObject {
         if (this.value == value) {
             return;
         }
-        this.value = (T) value;
+        this.value = value;
         ((SubmissionPublisher<T>) publisher).submit(this.value);
     }
 
@@ -111,6 +111,15 @@ public class FieldData<T> implements TrackableObject {
     public boolean isValid() {
         if (value instanceof TrackableObject trackableObject) {
             return trackableObject.isValid();
+        }
+        return false;
+    }
+
+
+    @Override
+    public boolean isBusy() {
+        if (value instanceof TrackableObject trackableObject) {
+            return trackableObject.isBusy();
         }
         return false;
     }
