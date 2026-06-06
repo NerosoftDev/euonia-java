@@ -2,6 +2,7 @@ package com.euonia.factory;
 
 import com.euonia.factory.annotation.*;
 import com.euonia.osba.*;
+import com.euonia.osba.abstracts.UseBusinessContext;
 import com.euonia.reflection.ObjectReflector;
 
 import java.lang.reflect.InvocationTargetException;
@@ -21,12 +22,12 @@ public class BusinessObjectFactory implements ObjectFactory {
         this.beanFactory = beanFactory;
         return this;
     }
-
+    
     @Override
     public <T> T create(Class<T> type, Object... criteria) {
         var method = ObjectReflector.findFactoryMethod(type, FactoryCreate.class, criteria);
         var target = getObjectInstance(type);
-        if (target instanceof EditableObject editableObject) {
+        if (target instanceof ObservableObject<?> editableObject) {
             editableObject.markAsNew();
         }
 
@@ -58,16 +59,17 @@ public class BusinessObjectFactory implements ObjectFactory {
         return target;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public <T> T save(Class<T> type, T target) {
         Method method = switch (target) {
-            case EditableObject editableObject -> switch (editableObject.getEditState()) {
+            case ObservableObject editableObject -> switch (editableObject.getState()) {
                 case ObjectEditState.NEW -> ObjectReflector.findFactoryMethod(type, FactoryInsert.class, new Object[0]);
                 case ObjectEditState.CHANGED ->
                     ObjectReflector.findFactoryMethod(type, FactoryUpdate.class, new Object[0]);
                 case ObjectEditState.DELETED ->
                     ObjectReflector.findFactoryMethod(type, FactoryDelete.class, new Object[0]);
-                default -> throw new IllegalArgumentException("Unexpected value: " + editableObject.getEditState());
+                default -> throw new IllegalArgumentException("Unexpected value: " + editableObject.getState());
             };
             case ExecutableObject _ -> ObjectReflector.findFactoryMethod(type, FactoryExecute.class, new Object[0]);
             case ReadOnlyObject _ ->
