@@ -30,6 +30,10 @@ public abstract class RuleBase implements Rule {
         this.property = property;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public final PropertyInfo<?> getProperty() {
         return property;
     }
