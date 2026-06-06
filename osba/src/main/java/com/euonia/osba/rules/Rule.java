@@ -16,7 +16,5 @@ public interface Rule {
 
     int getPriority();
 
-    void setPriority(int priority);
-
     CompletableFuture<Void> executeAsync(RuleContext context);
 }

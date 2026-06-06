@@ -13,7 +13,6 @@ public abstract class RuleBase implements Rule {
     private static final String NAME_PREFIX = "rule://";
 
     private final String name;
-    private int priority;
 
     private PropertyInfo<?> property;
 
@@ -37,12 +36,7 @@ public abstract class RuleBase implements Rule {
 
     @Override
     public int getPriority() {
-        return priority;
-    }
-
-    @Override
-    public void setPriority(int priority) {
-        this.priority = priority;
+        return 0;
     }
 
     private static String generateName(Type type, String... names) {
