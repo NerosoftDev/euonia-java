@@ -15,6 +15,7 @@ import java.util.UUID;
  * This ensures that the uniqueness of the identifier is maintained throughout
  * its lifecycle.
  */
+@SuppressWarnings("unused")
 public final class ObjectId {
     private final Object value;
 
@@ -99,6 +100,13 @@ public final class ObjectId {
         return new ObjectId(ULID.generate());
     }
 
+    public <T> T getValue(Class<T> type) {
+        if (type.isInstance(value)) {
+            return type.cast(value);
+        }
+        return null;
+    }
+
     @Override
     public int hashCode() {
         return value.hashCode();
@@ -116,9 +124,9 @@ public final class ObjectId {
 
     @Override
     public String toString() {
-
         return switch (value) {
             case UUID uuid -> uuid.toString();
+            case ULID uuid -> ulid().toString();
             case Long l -> l.toString();
             case Integer i -> i.toString();
             case String s -> s;
