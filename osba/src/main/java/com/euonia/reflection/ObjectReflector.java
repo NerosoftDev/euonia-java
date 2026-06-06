@@ -11,21 +11,22 @@ public class ObjectReflector {
     private static final ConcurrentMap<String, Method> factoryMethodCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static <T, A extends Annotation> Method findFactoryMethod(Class<T> targetType, Class<A> annotationType,
-            Object[] criteria) {
+                                                                     Object[] criteria) {
         var name = getMethodName(targetType, annotationType, criteria);
-        return factoryMethodCache.computeIfAbsent(name, k -> findMatchedMethod(targetType, annotationType, criteria));
+        return factoryMethodCache.computeIfAbsent(name, _ -> findMatchedMethod(targetType, annotationType, criteria));
     }
 
     private static <T> String getMethodName(Class<T> targetType, Class<? extends Annotation> annotationType,
-            Object[] criteria) {
+                                            Object[] criteria) {
         var typeName = targetType.getName();
         var annotationName = annotationType.getSimpleName();
         var parameterNames = getParameterTypeName(criteria);
         return typeName + "." + annotationName + "(" + parameterNames + ")";
     }
 
+    @SuppressWarnings("SequencedCollectionMethodCanBeUsed")
     private static <T> Method findMatchedMethod(Class<T> targetType, Class<? extends Annotation> annotationType,
-            Object[] criteria) {
+                                                Object[] criteria) {
         var candidates = getCandidateMethods(targetType, annotationType, 0);
         if (candidates.isEmpty()) {
             var names = getConventionMethodNames(annotationType);
@@ -95,14 +96,14 @@ public class ObjectReflector {
             var names = getConventionMethodNames(annotationType);
             var parameterNames = getParameterTypeName(criteria);
             throw new MissingMethodException(targetType.getTypeName(),
-                    String.join("/", names) + "(" + parameterNames + ")");
+                String.join("/", names) + "(" + parameterNames + ")");
         }
 
         if (matches.size() > 1) {
 
             var maxScore = matches.stream().map(Map.Entry::getValue)
-                    .max(Integer::compareTo)
-                    .orElseGet(() -> 0);
+                                  .max(Integer::compareTo)
+                                  .orElse(0);
             var topMatches = matches.stream().filter(m -> Objects.equals(m.getValue(), maxScore)).toList();
             if (topMatches.size() > 1) {
                 throw new AmbiguousMethodException("Multiple methods were found for the specified operation");
@@ -148,6 +149,26 @@ public class ObjectReflector {
                 return 3;
             }
 
+            switch (criteria) {
+                case Long _ when parameter.getType() == long.class -> {
+                    return 3;
+                }
+                case Double _ when parameter.getType() == double.class -> {
+                    return 3;
+                }
+                case Float _ when parameter.getType() == float.class -> {
+                    return 3;
+                }
+                case Integer _ when parameter.getType() == int.class -> {
+                    return 3;
+                }
+                case Boolean _ when parameter.getType() == boolean.class -> {
+                    return 3;
+                }
+                default -> {
+                }
+            }
+
             var parameterType = parameter.getType();
 
             if (parameterType == Object.class) {
@@ -163,20 +184,20 @@ public class ObjectReflector {
     }
 
     private static Map<Method, Integer> getCandidateMethods(Class<?> targetType,
-            Class<? extends Annotation> annotationType, int level) {
+                                                            Class<? extends Annotation> annotationType, int level) {
         var validNames = getConventionMethodNames(annotationType);
         var result = new HashMap<Method, Integer>();
 
-        var methods = Arrays.stream(targetType.getMethods())
-                .filter(method -> method.isAnnotationPresent(annotationType) || validNames.contains(method.getName()))
-                .toList();
+        var methods = Arrays.stream(targetType.getDeclaredMethods())
+                            .filter(method -> method.isAnnotationPresent(annotationType) || validNames.contains(method.getName()))
+                            .toList();
 
         for (var method : methods) {
             result.put(method, level);
         }
 
         if (result.isEmpty() && targetType.getSuperclass() != Object.class
-                && !targetType.getSuperclass().isInterface()) {
+            && !targetType.getSuperclass().isInterface()) {
             result.putAll(getCandidateMethods(targetType.getSuperclass(), annotationType, level - 1));
         }
         return result;

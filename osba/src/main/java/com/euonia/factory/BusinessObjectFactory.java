@@ -14,15 +14,22 @@ import java.util.function.Function;
  * BusinessObjectFactory is an implementation of the ObjectFactory interface that uses reflection to create, fetch, insert, update, save, execute, and delete business objects based on annotated factory methods.
  * It supports integration with a bean factory for object instantiation and handles different object states for saving operations.
  */
+@SuppressWarnings("UnusedReturnValue")
 public class BusinessObjectFactory implements ObjectFactory {
 
     private Function<Class<?>, ?> beanFactory;
 
+    /**
+     * Configures the BusinessObjectFactory to use the provided bean factory for object instantiation.
+     *
+     * @param beanFactory the bean factory function to use for creating objects
+     * @return the current instance of BusinessObjectFactory
+     */
     public BusinessObjectFactory use(Function<Class<?>, ?> beanFactory) {
         this.beanFactory = beanFactory;
         return this;
     }
-    
+
     @Override
     public <T> T create(Class<T> type, Object... criteria) {
         var method = ObjectReflector.findFactoryMethod(type, FactoryCreate.class, criteria);
@@ -76,7 +83,7 @@ public class BusinessObjectFactory implements ObjectFactory {
                 throw new UnsupportedOperationException("Cannot save a read-only object of type: " + type.getName());
             default -> ObjectReflector.findFactoryMethod(type, FactoryUpdate.class, new Object[0]);
         };
-        invoke(method, target, new Object[0]);
+        invoke(method, target);
         return target;
     }
 
@@ -127,7 +134,7 @@ public class BusinessObjectFactory implements ObjectFactory {
             }
 
             if (object instanceof UseBusinessContext businessObject) {
-                businessObject.setBusinessContext(new BusinessContext(beanFactory, this::getObjectInstance));
+                businessObject.setBusinessContext(new BusinessContext(this::getObjectInstance, this));
             }
 
             return object;
@@ -141,6 +148,7 @@ public class BusinessObjectFactory implements ObjectFactory {
 
     private <T> void invoke(Method method, T target, Object... criteria) {
         try {
+            method.setAccessible(true);
             method.invoke(target, criteria);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(
