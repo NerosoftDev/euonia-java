@@ -12,11 +12,10 @@ import com.euonia.security.UnauthorizedAccessException;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable {
     private final List<PropertyInfo<?>> changedProperties = new ArrayList<>();
@@ -236,7 +235,8 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
         if (oldValue == null) {
             isDifferent = newValue != null;
         } else {
-            if (propertyInfo.getType().isAssignableFrom(BusinessObject.class)) {
+            if (BusinessObject.class.isAssignableFrom(propertyInfo.getType())) {
+                //if (propertyInfo.getType().isAssignableFrom(BusinessObject.class)) {
                 isDifferent = !Objects.equals(oldValue, newValue);
             } else {
                 isDifferent = !oldValue.equals(newValue);
@@ -346,21 +346,83 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
     // endregion
 
     // region Register property
+
+    /**
+     * Registers a property with the specified property info.
+     *
+     * @param propertyInfo the property info to register
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
     @SuppressWarnings("unchecked")
-    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, PropertyInfo<V> propertyInfo) {
-        return (PropertyInfo<V>) PropertyInfoManager.registerProperty(type, propertyInfo);
+    protected <V> PropertyInfo<V> registerProperty(PropertyInfo<V> propertyInfo) {
+        return (PropertyInfo<V>) PropertyInfoManager.registerProperty(getClass(), propertyInfo);
     }
 
-    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName) {
-        return registerProperty(type, new PropertyInfo<V>(propertyName));
+    /**
+     * Registers a property with the specified type and name.
+     *
+     * @param type         the type of the property
+     * @param propertyName the name of the property
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
+    protected <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName) {
+        return registerProperty(new PropertyInfo<>(type, propertyName, null, getClass(), null));
     }
 
-    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName) {
-        return registerProperty(type, new PropertyInfo<>(propertyName, friendlyName, null));
+    /**
+     * Registers a property with the specified type, name, and default value.
+     *
+     * @param type         the type of the property
+     * @param propertyName the name of the property
+     * @param defaultValue the default value supplier for the property
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
+    protected <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, Supplier<V> defaultValue) {
+        return registerProperty(new PropertyInfo<>(type, propertyName, null, getClass(), defaultValue));
     }
 
-    protected static <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName, V defaultValue) {
-        return registerProperty(type, new PropertyInfo<>(propertyName, friendlyName, defaultValue));
+    /**
+     * Registers a property with the specified type, name, and friendly name.
+     *
+     * @param type         the type of the property
+     * @param propertyName the name of the property
+     * @param friendlyName the friendly name of the property
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
+    protected <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName) {
+        return registerProperty(new PropertyInfo<>(type, propertyName, friendlyName, getClass(), null));
+    }
+
+    /**
+     * Registers a property with the specified type, name, friendly name, and default value.
+     *
+     * @param type         the type of the property
+     * @param propertyName the name of the property
+     * @param friendlyName the friendly name of the property
+     * @param defaultValue the default value of the property
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
+    protected <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName, V defaultValue) {
+        return registerProperty(new PropertyInfo<>(type, propertyName, friendlyName, getClass(), () -> defaultValue));
+    }
+
+    /**
+     * Registers a property with the specified type, name, friendly name, and default value supplier.
+     *
+     * @param type         the type of the property
+     * @param propertyName the name of the property
+     * @param friendlyName the friendly name of the property
+     * @param defaultValue the default value supplier for the property
+     * @param <V>          the type of the property
+     * @return the registered property info
+     */
+    protected <V> PropertyInfo<V> registerProperty(Class<V> type, String propertyName, String friendlyName, Supplier<V> defaultValue) {
+        return registerProperty(new PropertyInfo<>(type, propertyName, friendlyName, getClass(), defaultValue));
     }
     // endregion
 }
