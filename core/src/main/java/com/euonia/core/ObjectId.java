@@ -15,7 +15,6 @@ import java.util.UUID;
  * This ensures that the uniqueness of the identifier is maintained throughout
  * its lifecycle.
  */
-@SuppressWarnings("unused")
 public final class ObjectId {
     private final Object value;
 
