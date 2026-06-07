@@ -301,7 +301,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     private BypassRuleCheckObject<B> internalBypassRuleChecks;
 
-    protected final BypassRuleCheckObject<?> bypassRuleChecks() {
+    protected final BypassRuleCheckObject<B> bypassRuleChecks() {
         return BypassRuleCheckObject.create(this);
     }
 
