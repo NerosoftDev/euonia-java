@@ -19,8 +19,8 @@ class TrioTest {
         assertTrue(trio.contains(2));
         assertEquals(List.of(1, 2, 3), trio.values());
         assertNull(Trio.empty().value1());
-        assertEquals(3, Trio.of(new Integer[]{1, 2, 3}).value3());
-        assertEquals(2, Trio.of(List.of(1, 2, 3)).value2());
+        assertEquals(3, Trio.from(new Integer[]{1, 2, 3}).value3());
+        assertEquals(2, Trio.from(List.of(1, 2, 3)).value2());
     }
 
     @Test
@@ -28,12 +28,12 @@ class TrioTest {
         Trio<Integer, Integer, Integer> trio = Trio.of(1, 2, 3);
 
         assertThrows(IndexOutOfBoundsException.class, () -> trio.value(3));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of((Integer[]) null));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of(new Integer[]{}));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of(new Integer[]{1, 2}));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of((List<Integer>) null));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of(List.of()));
-        assertThrows(IllegalArgumentException.class, () -> Trio.of(List.of(1, 2)));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from((Integer[]) null));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from(new Integer[]{}));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from(new Integer[]{1, 2}));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from((List<Integer>) null));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from(List.of()));
+        assertThrows(IllegalArgumentException.class, () -> Trio.from(List.of(1, 2)));
     }
 }
 
