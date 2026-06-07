@@ -1,27 +1,18 @@
 package com.euonia.reflection;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class PropertyInfoManager {
-    private static Map<Type, PropertyInfoList> propertyCache;
+    private static final ConcurrentMap<Type, PropertyInfoList> propertyCache = new ConcurrentHashMap<>();
 
-    private synchronized static Map<Type, PropertyInfoList> getPropertyCache() {
-        if (propertyCache == null) {
-            propertyCache = new HashMap<>();
-        }
-        return propertyCache;
-    }
-
-    public synchronized static PropertyInfoList getPropertyListCache(Type type) {
-        var cache = getPropertyCache();
-        if (!cache.containsKey(type)) {
+    public static PropertyInfoList getPropertyListCache(Type type) {
+        return propertyCache.computeIfAbsent(type, t -> {
             PropertyInfoList propertyInfoList = new PropertyInfoList();
-            cache.put(type, propertyInfoList);
-            FieldDataManager.initStaticFields((Class<?>) type);
-        }
-        return cache.get(type);
+            FieldDataManager.initStaticFields((Class<?>) t);
+            return propertyInfoList;
+        });
     }
 
     public static PropertyInfoList getRegisteredProperties(Type type) {
@@ -38,16 +29,8 @@ public class PropertyInfoManager {
                          .orElse(null);
     }
 
-    public synchronized static PropertyInfo<?> registerProperty(Type type, PropertyInfo<?> propertyInfo) {
+    public static PropertyInfo<?> registerProperty(final Type type, PropertyInfo<?> propertyInfo) {
         var list = getPropertyListCache(type);
-        if (list.isLocked()) {
-            throw new IllegalStateException("Cannot register property after the list has been locked.");
-        }
-        var index = list.indexOf(propertyInfo);
-        if (index >= 0) {
-            throw new IllegalStateException("Property with name '" + propertyInfo.getName() + "' is already registered for type " + type.getTypeName());
-        }
-        list.add(propertyInfo);
-        return propertyInfo;
+        return list.getOrAdd(propertyInfo);
     }
 }
