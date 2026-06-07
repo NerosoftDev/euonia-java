@@ -13,7 +13,7 @@ public class ObjectReflector {
     public static <T, A extends Annotation> Method findFactoryMethod(Class<T> targetType, Class<A> annotationType,
                                                                      Object[] criteria) {
         var name = getMethodName(targetType, annotationType, criteria);
-        return factoryMethodCache.computeIfAbsent(name, _ -> findMatchedMethod(targetType, annotationType, criteria));
+        return factoryMethodCache.computeIfAbsent(name, s -> findMatchedMethod(targetType, annotationType, criteria));
     }
 
     private static <T> String getMethodName(Class<T> targetType, Class<? extends Annotation> annotationType,

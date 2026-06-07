@@ -78,8 +78,8 @@ public class BusinessObjectFactory implements ObjectFactory {
                     ObjectReflector.findFactoryMethod(type, FactoryDelete.class, new Object[0]);
                 default -> throw new IllegalArgumentException("Unexpected value: " + editableObject.getState());
             };
-            case ExecutableObject _ -> ObjectReflector.findFactoryMethod(type, FactoryExecute.class, new Object[0]);
-            case ReadOnlyObject _ ->
+            case ExecutableObject t -> ObjectReflector.findFactoryMethod(type, FactoryExecute.class, new Object[0]);
+            case ReadOnlyObject t ->
                 throw new UnsupportedOperationException("Cannot save a read-only object of type: " + type.getName());
             default -> ObjectReflector.findFactoryMethod(type, FactoryUpdate.class, new Object[0]);
         };
