@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Quartet")
 class QuartetTest {
 
     @Test
-    void ofFromAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Quartet then values and empty factory behave as expected")
+    void givenValidInputsWhenCreatingQuartetThenFactoriesBehaveAsExpected() {
         Quartet<Integer, Integer, Integer, Integer> tuple = Quartet.of(1, 2, 3, 4);
 
         assertEquals(4, tuple.size());
@@ -20,7 +23,8 @@ class QuartetTest {
     }
 
     @Test
-    void fromRejectsInvalidInput() {
+    @DisplayName("Given invalid inputs when creating Quartet from array or list then illegal argument is thrown")
+    void givenInvalidInputsWhenCreatingQuartetFromArrayOrListThenThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> Quartet.from((Integer[]) null));
         assertThrows(IllegalArgumentException.class, () -> Quartet.from(new Integer[]{}));
         assertThrows(IllegalArgumentException.class, () -> Quartet.from(new Integer[]{1, 2, 3}));

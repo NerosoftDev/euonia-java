@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Sextet")
 class SextetTest {
 
     @Test
-    void ofFromAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Sextet then values and empty factory behave as expected")
+    void givenValidInputsWhenCreatingSextetThenFactoriesBehaveAsExpected() {
         Sextet<Integer, Integer, Integer, Integer, Integer, Integer> tuple = Sextet.of(1, 2, 3, 4, 5, 6);
 
         assertEquals(6, tuple.size());
@@ -20,7 +23,8 @@ class SextetTest {
     }
 
     @Test
-    void fromRejectsInvalidInput() {
+    @DisplayName("Given invalid inputs when creating Sextet from array or list then illegal argument is thrown")
+    void givenInvalidInputsWhenCreatingSextetFromArrayOrListThenThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> Sextet.from((Integer[]) null));
         assertThrows(IllegalArgumentException.class, () -> Sextet.from(new Integer[]{}));
         assertThrows(IllegalArgumentException.class, () -> Sextet.from(new Integer[]{1, 2, 3, 4, 5}));

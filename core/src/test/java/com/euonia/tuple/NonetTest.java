@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Nonet")
 class NonetTest {
 
     @Test
-    void ofFromAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Nonet then values and empty factory behave as expected")
+    void givenValidInputsWhenCreatingNonetThenFactoriesBehaveAsExpected() {
         Nonet<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
             Nonet.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
@@ -21,7 +24,8 @@ class NonetTest {
     }
 
     @Test
-    void fromRejectsInvalidInput() {
+    @DisplayName("Given invalid inputs when creating Nonet from array or list then illegal argument is thrown")
+    void givenInvalidInputsWhenCreatingNonetFromArrayOrListThenThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> Nonet.from((Integer[]) null));
         assertThrows(IllegalArgumentException.class, () -> Nonet.from(new Integer[]{}));
         assertThrows(IllegalArgumentException.class, () -> Nonet.from(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8}));

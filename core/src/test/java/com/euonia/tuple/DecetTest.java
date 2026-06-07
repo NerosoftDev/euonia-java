@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Decet")
 class DecetTest {
 
     @Test
-    void ofFromAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Decet then values and empty factory behave as expected")
+    void givenValidInputsWhenCreatingDecetThenFactoriesBehaveAsExpected() {
         Decet<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
             Decet.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
@@ -21,7 +24,8 @@ class DecetTest {
     }
 
     @Test
-    void fromRejectsInvalidInput() {
+    @DisplayName("Given invalid inputs when creating Decet from array or list then illegal argument is thrown")
+    void givenInvalidInputsWhenCreatingDecetFromArrayOrListThenThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> Decet.from((Integer[]) null));
         assertThrows(IllegalArgumentException.class, () -> Decet.from(new Integer[]{}));
         assertThrows(IllegalArgumentException.class, () -> Decet.from(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9}));

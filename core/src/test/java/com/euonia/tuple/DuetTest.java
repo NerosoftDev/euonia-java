@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Duet")
 class DuetTest {
 
     @Test
-    void ofFromAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Duet then values and empty factory behave as expected")
+    void givenValidInputsWhenCreatingDuetThenFactoriesBehaveAsExpected() {
         Duet<Integer, String> duet = Duet.of(1, "a");
 
         assertEquals(2, duet.size());
@@ -21,7 +24,8 @@ class DuetTest {
     }
 
     @Test
-    void fromRejectsInvalidInput() {
+    @DisplayName("Given invalid inputs when creating Duet from array or list then illegal argument is thrown")
+    void givenInvalidInputsWhenCreatingDuetFromArrayOrListThenThrowIllegalArgument() {
         assertThrows(IllegalArgumentException.class, () -> Duet.from((Integer[]) null));
         assertThrows(IllegalArgumentException.class, () -> Duet.from(new Integer[]{}));
         assertThrows(IllegalArgumentException.class, () -> Duet.from(new Integer[]{1}));

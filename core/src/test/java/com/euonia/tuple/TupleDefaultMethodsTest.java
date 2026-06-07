@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Tuple default methods")
 class TupleDefaultMethodsTest {
 
     @Test
-    void commonDefaultMethodsWork() {
+    @DisplayName("Given tuple values when using common default methods then expected results are returned")
+    void givenTupleValuesWhenUsingCommonDefaultsThenReturnExpectedResults() {
         Tuple tuple = Trio.of(1, 2, 1);
 
         assertEquals(3, tuple.size());
@@ -29,7 +32,8 @@ class TupleDefaultMethodsTest {
     }
 
     @Test
-    void equalsIgnoreOrderHonorsMultiplicityAndSize() {
+    @DisplayName("Given duplicated elements when comparing ignoring order then multiplicity and size are respected")
+    void givenDuplicatedElementsWhenComparingIgnoreOrderThenRespectMultiplicityAndSize() {
         Tuple left = Quartet.of(1, 2, 2, 3);
         Tuple sameElementsDifferentOrder = Quartet.of(2, 3, 1, 2);
         Tuple missingDuplicate = Quartet.of(1, 2, 3, 3);
@@ -42,7 +46,8 @@ class TupleDefaultMethodsTest {
     }
 
     @Test
-    void tupleValueThrowsOnInvalidIndex() {
+    @DisplayName("Given invalid index when reading tuple value then index out of bounds is thrown")
+    void givenInvalidIndexWhenReadingValueThenThrowIndexOutOfBounds() {
         Tuple tuple = Duet.of(1, 2);
 
         assertThrows(IndexOutOfBoundsException.class, () -> tuple.value(-1));

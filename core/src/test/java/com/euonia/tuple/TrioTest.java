@@ -1,15 +1,18 @@
 package com.euonia.tuple;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("Trio")
 class TrioTest {
 
     @Test
-    void ofFactoriesAndEmptyWork() {
+    @DisplayName("Given valid inputs when creating Trio then factories value lookup and empty factory behave as expected")
+    void givenValidInputsWhenCreatingTrioThenFactoriesAndLookupBehaveAsExpected() {
         Trio<Integer, Integer, Integer> trio = Trio.of(1, 2, 3);
 
         assertEquals(3, trio.size());
@@ -24,7 +27,8 @@ class TrioTest {
     }
 
     @Test
-    void valueAndFactoriesRejectInvalidInput() {
+    @DisplayName("Given invalid index or inputs when reading or creating Trio then appropriate exceptions are thrown")
+    void givenInvalidIndexOrInputsWhenReadingOrCreatingTrioThenThrowExpectedExceptions() {
         Trio<Integer, Integer, Integer> trio = Trio.of(1, 2, 3);
 
         assertThrows(IndexOutOfBoundsException.class, () -> trio.value(3));
