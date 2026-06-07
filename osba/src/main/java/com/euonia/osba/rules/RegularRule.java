@@ -19,6 +19,7 @@ public class RegularRule extends RuleBase {
     }
 
     public RegularRule(PropertyInfo<String> property, String expression, Function<String, String> messageFactory) {
+        super(property);
         this.property = property;
         this.expression = expression;
         this.messageFactory = messageFactory;

@@ -16,6 +16,7 @@ public class RequiredRule extends RuleBase {
     }
 
     public RequiredRule(PropertyInfo<?> property, Function<Object, String> messageFactory) {
+        super(property);
         this.property = property;
         this.messageFactory = messageFactory;
     }

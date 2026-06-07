@@ -1,9 +1,12 @@
 package com.euonia.osba.rules;
 
+import com.euonia.http.ResponseHttpStatusCode;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@ResponseHttpStatusCode(400)
 public class RuleCheckException extends RuntimeException {
 
     private final Map<String, List<String>> errors = new HashMap<>();

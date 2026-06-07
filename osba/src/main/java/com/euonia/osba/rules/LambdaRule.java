@@ -22,6 +22,7 @@ public class LambdaRule<T> extends RuleBase {
     }
 
     public LambdaRule(PropertyInfo<T> property, BiFunction<T, RuleContext, Boolean> function, Function<T, String> messageFactory) {
+        super(property);
         this.property = property;
         this.function = function;
         this.messageFactory = messageFactory;
