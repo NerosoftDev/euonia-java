@@ -149,24 +149,20 @@ public class ObjectReflector {
                 return 3;
             }
 
-            switch (criteria) {
-                case Long _ when parameter.getType() == long.class -> {
-                    return 3;
-                }
-                case Double _ when parameter.getType() == double.class -> {
-                    return 3;
-                }
-                case Float _ when parameter.getType() == float.class -> {
-                    return 3;
-                }
-                case Integer _ when parameter.getType() == int.class -> {
-                    return 3;
-                }
-                case Boolean _ when parameter.getType() == boolean.class -> {
-                    return 3;
-                }
-                default -> {
-                }
+            if (criteria instanceof Long && parameter.getType() == long.class) {
+                return 3;
+            }
+            if (criteria instanceof Double && parameter.getType() == double.class) {
+                return 3;
+            }
+            if (criteria instanceof Float && parameter.getType() == float.class) {
+                return 3;
+            }
+            if (criteria instanceof Integer && parameter.getType() == int.class) {
+                return 3;
+            }
+            if (criteria instanceof Boolean && parameter.getType() == boolean.class) {
+                return 3;
             }
 
             var parameterType = parameter.getType();
