@@ -10,10 +10,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-public class Rules {
+public final class Rules {
     private final RuleCheckable target;
     private final List<Consumer<BrokenRuleCollection>> validationCompleteListeners = new CopyOnWriteArrayList<>();
     private final BrokenRuleCollection brokenRules = new BrokenRuleCollection();
+    private final List<Rule> runningRules = new CopyOnWriteArrayList<>();
 
     private volatile boolean suppressRuleChecking;
     private volatile boolean hasRunningRules;
@@ -24,7 +25,7 @@ public class Rules {
 
     private volatile RuleManager ruleManager;
 
-    public final RuleManager getRuleManager() {
+    public RuleManager getRuleManager() {
         if (ruleManager == null) {
             synchronized (this) {
                 if (ruleManager == null) {
@@ -91,8 +92,28 @@ public class Rules {
     private CompletableFuture<Void> runRule(Rule rule, List<String> affectedProperties) {
         RuleContext context = new RuleContext(ctx -> {
             synchronized (this) {
+                getBrokenRules().add(ctx.getResults(), ctx.getRule().getProperty().getName());
+                runningRules.remove(ctx.getRule());
 
+                var properties = new ArrayList<PropertyInfo<?>>();
 
+                if (ctx.getRule().getProperty() != null) {
+                    properties.add(ctx.getRule().getProperty());
+                }
+
+                if (ctx.getRule().getRelatedProperties() != null) {
+                    properties.addAll(ctx.getRule().getRelatedProperties());
+                }
+
+                for (var property : properties) {
+                    if (runningRules.stream().noneMatch(r -> r.getName().equals(property.getName()))) {
+                        target.ruleCheckComplete(property);
+                    }
+                }
+
+                if (!hasRunningRules) {
+                    target.allRulesComplete();
+                }
             }
         }) {{
             setRule(rule);
@@ -106,9 +127,9 @@ public class Rules {
         }
         affectedProperties.addAll(rule.getRelatedProperties().stream().map(PropertyInfo::getName).toList());
 
+        runningRules.add(rule);
         return rule.executeAsync(context)
-                   .thenRun(context::complete)
-                   .thenRun(() -> brokenRules.add(context.getResults(), propertyName));
+                   .thenRun(context::complete);
     }
 
     private void notifyValidationComplete() {
