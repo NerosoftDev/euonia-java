@@ -12,6 +12,7 @@
         <module>osba</module>
         <module>domain</module>
         <module>pipeline</module>
+        <module>uow</module>
         <module>spring</module>
     </modules>
 
