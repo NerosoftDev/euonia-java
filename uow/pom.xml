@@ -9,8 +9,9 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>domain</artifactId>
-    <name>euonia domain module</name>
+    <artifactId>unit-of-work</artifactId>
+    <name>euonia uow module</name>
+    <description>Unit of work module for the Euonia framework</description>
 
     <dependencies>
         <dependency>
@@ -18,6 +19,23 @@
             <artifactId>core</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.12.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
