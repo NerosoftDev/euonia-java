@@ -1,5 +1,6 @@
 package com.euonia.pipeline;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -52,7 +53,7 @@ public class DefaultPipelineProvider extends PipelineBase {
                 return stage.thenApply(ignored -> null);
             }
             return CompletableFuture.completedFuture(null);
-        } catch (Exception ex) {
+        } catch (IllegalAccessException | InvocationTargetException ex) {
             return CompletableFuture.failedFuture(ex);
         }
     }
