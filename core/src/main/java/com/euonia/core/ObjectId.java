@@ -78,7 +78,17 @@ public final class ObjectId {
      * @return a new ObjectId
      */
     public static ObjectId guid() {
-        return new ObjectId(UUID.randomUUID());
+        return guid(GuidType.SIMPLE);
+    }
+
+    /**
+     * Generates a new ObjectId using the GUID algorithm.
+     *
+     * @param type the GUID generation strategy
+     * @return a new ObjectId
+     */
+    public static ObjectId guid(GuidType type) {
+        return new ObjectId(GuidGenerator.generate(type));
     }
 
     /**

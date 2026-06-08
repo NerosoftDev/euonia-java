@@ -1,11 +1,14 @@
 package com.euonia.core;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 @DisplayName("ObjectId")
 class ObjectIdTest {
@@ -118,6 +121,15 @@ class ObjectIdTest {
 
         assertDoesNotThrow(() -> UUID.fromString(guid.toString()));
         assertDoesNotThrow(() -> UUID.fromString(random.toString()));
+    }
+
+    @Test
+    @DisplayName("Given GUID type when generating then typed GUID strategy is supported")
+    void givenGuidTypeWhenGeneratingThenTypedGuidStrategyIsSupported() {
+        ObjectId guid = ObjectId.guid(GuidType.SEQUENTIAL_AS_STRING);
+
+        assertInstanceOf(UUID.class, guid.getValue());
+        assertDoesNotThrow(() -> UUID.fromString(guid.toString()));
     }
 }
 
