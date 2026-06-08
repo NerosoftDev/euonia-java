@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>domain</artifactId>
+    <name>euonia domain module</name>
 
     <dependencies>
         <dependency>

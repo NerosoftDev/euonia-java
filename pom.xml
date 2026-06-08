@@ -11,6 +11,8 @@
         <module>core</module>
         <module>osba</module>
         <module>domain</module>
+        <module>pipeline</module>
+        <module>spring</module>
     </modules>
 
     <name>euonia-parent</name>

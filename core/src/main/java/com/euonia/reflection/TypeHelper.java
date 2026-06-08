@@ -2,12 +2,31 @@ package com.euonia.reflection;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
-@SuppressWarnings("unused")
+/**
+ * TypeHelper is a utility class that provides methods for coercing values to a
+ * desired type, handling primitive types, enums, date/time conversions,
+ * collections, and more.
+ * It is designed to simplify type conversions and ensure type safety in various
+ * scenarios.
+ */
 public final class TypeHelper {
     private TypeHelper() {
     }
@@ -45,7 +64,7 @@ public final class TypeHelper {
 
         // Collections/Map/JSON
         if (Collection.class.isAssignableFrom(boxedDesired) || boxedDesired.isArray()
-            || Map.class.isAssignableFrom(boxedDesired)) {
+                || Map.class.isAssignableFrom(boxedDesired)) {
             return convertToCollectionOrMap(boxedDesired, value);
         }
 
@@ -82,7 +101,7 @@ public final class TypeHelper {
             return conv;
 
         throw new IllegalArgumentException(String.format("Cannot convert value of type %s to %s (value=%s)",
-            value.getClass().getName(), desiredType.getName(), value));
+                value.getClass().getName(), desiredType.getName(), value));
     }
 
     @SuppressWarnings("unchecked")
@@ -90,34 +109,50 @@ public final class TypeHelper {
         return (T) coerceValue(desiredType, (value == null ? null : value.getClass()), value);
     }
 
-    private static Class<?> boxIfPrimitive(Class<?> c) {
-        if (!c.isPrimitive())
-            return c;
-        if (c == int.class)
+    /**
+     * If the given class is a primitive type, returns its boxed type. Otherwise,
+     * returns the class itself.
+     *
+     * @param type the class to check
+     * @return the boxed type if the class is primitive, otherwise the class itself
+     */
+    public static Class<?> boxIfPrimitive(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return type;
+        }
+        if (type == int.class) {
             return Integer.class;
-        if (c == long.class)
+        }
+        if (type == long.class) {
             return Long.class;
-        if (c == short.class)
+        }
+        if (type == short.class) {
             return Short.class;
-        if (c == byte.class)
+        }
+        if (type == byte.class) {
             return Byte.class;
-        if (c == float.class)
+        }
+        if (type == float.class) {
             return Float.class;
-        if (c == double.class)
+        }
+        if (type == double.class) {
             return Double.class;
-        if (c == boolean.class)
+        }
+        if (type == boolean.class) {
             return Boolean.class;
-        if (c == char.class)
+        }
+        if (type == char.class) {
             return Character.class;
-        return c;
+        }
+        return type;
     }
 
-    private static boolean isPrimitiveNumber(Class<?> c) {
-        return c == int.class || c == long.class || c == short.class || c == byte.class
-            || c == float.class || c == double.class;
+    public static boolean isPrimitiveNumber(Class<?> type) {
+        return type == int.class || type == long.class || type == short.class || type == byte.class
+                || type == float.class || type == double.class;
     }
 
-    private static Object defaultPrimitiveValue(Class<?> primitiveType) {
+    public static Object defaultPrimitiveValue(Class<?> primitiveType) {
         if (primitiveType == boolean.class)
             return false;
         if (primitiveType == char.class)
@@ -137,7 +172,7 @@ public final class TypeHelper {
         return null;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked", "IfCanBeSwitch"})
+    @SuppressWarnings({ "rawtypes", "unchecked", "IfCanBeSwitch" })
     private static Object convertToEnum(Class<?> enumType, Object value) {
 
         if (value == null) {
@@ -265,9 +300,9 @@ public final class TypeHelper {
     // available)
     private static boolean isDateTimeTarget(Class<?> boxedDesired) {
         return boxedDesired == Date.class || boxedDesired == Instant.class || boxedDesired == LocalDateTime.class
-            || boxedDesired == LocalDate.class || boxedDesired == LocalTime.class
-            || boxedDesired == OffsetDateTime.class
-            || boxedDesired == ZonedDateTime.class;
+                || boxedDesired == LocalDate.class || boxedDesired == LocalTime.class
+                || boxedDesired == OffsetDateTime.class
+                || boxedDesired == ZonedDateTime.class;
     }
 
     private static Object convertToDateTime(Class<?> target, Object value) {
@@ -299,8 +334,8 @@ public final class TypeHelper {
         }
 
         if (Temporal.class.isAssignableFrom(target) || target == LocalDate.class || target == LocalDateTime.class
-            || target == LocalTime.class || target == Instant.class || target == OffsetDateTime.class
-            || target == ZonedDateTime.class) {
+                || target == LocalTime.class || target == Instant.class || target == OffsetDateTime.class
+                || target == ZonedDateTime.class) {
             if (value instanceof Number) {
                 long epoch = ((Number) value).longValue();
                 Instant inst = Instant.ofEpochMilli(epoch);
@@ -311,12 +346,12 @@ public final class TypeHelper {
             if (s.isEmpty())
                 return null;
             List<java.util.function.Function<String, Object>> parsers = Arrays.asList(
-                Instant::parse,
-                OffsetDateTime::parse,
-                ZonedDateTime::parse,
-                LocalDateTime::parse,
-                LocalDate::parse,
-                LocalTime::parse);
+                    Instant::parse,
+                    OffsetDateTime::parse,
+                    ZonedDateTime::parse,
+                    LocalDateTime::parse,
+                    LocalDate::parse,
+                    LocalTime::parse);
             for (var p : parsers) {
                 try {
                     Object parsed = p.apply(s);
@@ -326,11 +361,11 @@ public final class TypeHelper {
                         case "OffsetDateTime" -> convertInstantToTarget(target, ((OffsetDateTime) parsed).toInstant());
                         case "ZonedDateTime" -> convertInstantToTarget(target, ((ZonedDateTime) parsed).toInstant());
                         case "LocalDateTime" -> convertInstantToTarget(target,
-                            ((LocalDateTime) parsed).atZone(ZoneId.systemDefault()).toInstant());
+                                ((LocalDateTime) parsed).atZone(ZoneId.systemDefault()).toInstant());
                         case "LocalDate" -> convertInstantToTarget(target,
-                            ((LocalDate) parsed).atStartOfDay(ZoneId.systemDefault()).toInstant());
+                                ((LocalDate) parsed).atStartOfDay(ZoneId.systemDefault()).toInstant());
                         case "LocalTime" -> convertInstantToTarget(target, LocalDateTime
-                            .of(LocalDate.now(), (LocalTime) parsed).atZone(ZoneId.systemDefault()).toInstant());
+                                .of(LocalDate.now(), (LocalTime) parsed).atZone(ZoneId.systemDefault()).toInstant());
                         default -> null;
                     };
                 } catch (DateTimeParseException ignored) {
