@@ -59,7 +59,8 @@ public class ApplicationContextServiceResolver implements ServiceResolver {
                 continue;
             }
 
-            if (!parameterTypes[i].isAssignableFrom(arg.getClass())) {
+            Class<?> parameterType = TypeHelper.boxIfPrimitive(parameterTypes[i]);
+            if (!parameterType.isAssignableFrom(arg.getClass())) {
                 return false;
             }
         }
