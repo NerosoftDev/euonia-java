@@ -10,7 +10,7 @@
     <modules>
         <module>core</module>
         <module>osba</module>
-        <module>domain</module>
+        <module>ddd</module>
         <module>pipeline</module>
         <module>uow</module>
         <module>spring</module>
