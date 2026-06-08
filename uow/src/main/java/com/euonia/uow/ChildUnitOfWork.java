@@ -7,6 +7,21 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * A unit of work that delegates all operations to a parent unit of work.
+ *
+ * <p>When {@link UnitOfWorkManager#begin} is called while a unit of work
+ * is already active on the current thread (and {@code requiresNew} is
+ * {@code false}), a {@code ChildUnitOfWork} is returned instead of a new
+ * top-level unit. All lifecycle methods — save, commit, rollback, listener
+ * registration — are forwarded to the parent.</p>
+ *
+ * <p>The {@link #completeAsync()} method is a no-op on a child, since
+ * only the outermost unit of work should trigger completion.</p>
+ *
+ * @see UnitOfWork
+ * @see UnitOfWorkManager
+ */
 public class ChildUnitOfWork extends UnitOfWork {
     private final UnitOfWork parent;
 
