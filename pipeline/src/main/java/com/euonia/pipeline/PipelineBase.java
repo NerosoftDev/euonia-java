@@ -39,17 +39,21 @@ public abstract class PipelineBase implements Pipeline {
 
     @Override
     public Pipeline useOf(Class<?> contextType, boolean useAheadOfOthers) {
-        PipelineBehaviorType[] attributes = contextType.getAnnotationsByType(PipelineBehaviorType.class);
+        PipelineBehaviors annotation = contextType.getAnnotation(PipelineBehaviors.class);
+        if (annotation == null) {
+            return this;
+        }
         if (useAheadOfOthers) {
-            for (int index = 0; index < attributes.length; index++) {
-                Class<?> behaviorType = attributes[index].behaviorType();
+            Class<?>[] behaviorTypes = annotation.value();
+            for (int index = 0; index < behaviorTypes.length; index++) {
+                Class<?> behaviorType = behaviorTypes[index];
                 use(next -> getNext(next, behaviorType), index);
             }
             return this;
         }
 
-        for (PipelineBehaviorType attribute : attributes) {
-            use(attribute.behaviorType());
+        for (Class<?> behaviorType : annotation.value()) {
+            use(behaviorType);
         }
         return this;
     }

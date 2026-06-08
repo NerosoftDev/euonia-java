@@ -39,7 +39,7 @@ class DefaultPipelineProviderTests {
         assertEquals("ctx", markerService.value);
     }
 
-    @PipelineBehaviorType(behaviorType = AnnotatedPipelineBehavior.class)
+    @PipelineBehaviors(AnnotatedPipelineBehavior.class)
     static class TraceContext {
         final List<String> trace = new ArrayList<>();
     }
