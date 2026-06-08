@@ -93,6 +93,8 @@ try (UnitOfWork uow = manager.begin(new UnitOfWorkOptions(true), false)) {
 
 ### 注解驱动（配合 AOP）
 
+在服务类或方法上添加 `@UnitOfWork` 注解：
+
 ```java
 import com.euonia.uow.annotation.UnitOfWork;
 
@@ -107,6 +109,136 @@ public class OrderService implements UnitOfWorkEnabled {
     public List<Order> findOrders() {
         // 只读 — 无需工作单元
     }
+}
+```
+
+### Spring Boot 集成
+
+添加 `spring` 模块依赖：
+
+```xml
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>spring</artifactId>
+    <version>${euonia.version}</version>
+</dependency>
+```
+
+自动配置（`UnitOfWorkAutoConfiguration`）会注册以下 Bean：
+- `UnitOfWorkAccessor` — 线程局部持有者
+- `UnitOfWorkManager` — 创建工作单元的入口
+- `UnitOfWorkAspect` — AOP 切面，拦截 `@UnitOfWork` 注解的方法
+
+**切面工作原理：**
+
+```mermaid
+sequenceDiagram
+    participant Caller as 调用方
+    participant Aspect as UnitOfWorkAspect
+    participant Manager as UnitOfWorkManager
+    participant UOW as UnitOfWork
+    participant Service as 业务服务
+
+    Caller->>Aspect: 调用 @UnitOfWork 方法
+    Aspect->>Manager: begin(options, false)
+    Manager->>UOW: 创建并初始化
+    Aspect->>Service: proceed()
+    alt 成功
+        Service-->>Aspect: 返回结果
+        Aspect->>UOW: completeAsync()
+        UOW->>UOW: saveChanges → handlers → listeners
+    else 异常
+        Service--xAspect: 抛出异常
+        Aspect->>UOW: close() → 失败监听器
+    end
+    Aspect->>UOW: close() → 释放监听器
+    Aspect-->>Caller: 返回结果 / 抛出异常
+```
+
+**服务示例：**
+
+```java
+@Service
+@UnitOfWork
+public class OrderService {
+
+    private final JdbcTemplate jdbc;
+    private final RabbitTemplate rabbit;
+
+    public OrderService(JdbcTemplate jdbc, RabbitTemplate rabbit) {
+        this.jdbc = jdbc;
+        this.rabbit = rabbit;
+    }
+
+    public void placeOrder(Order order) {
+        // 数据库写入和消息发布在同一工作单元中
+        jdbc.update("INSERT INTO orders ...");
+        rabbit.convertAndSend("order.exchange", "placed", order);
+        // 成功：两者一起提交
+        // 失败：两者一起回滚
+    }
+}
+```
+
+**注册事务上下文：**
+
+通过生命周期监听器自动注册上下文：
+
+```java
+@Configuration
+public class UowContextConfig {
+
+    @Bean
+    public UnitOfWorkManager unitOfWorkManager(
+            UnitOfWorkAccessor accessor,
+            DataSource dataSource,
+            ConnectionFactory connectionFactory) {
+
+        UnitOfWorkManager manager = new UnitOfWorkManager(accessor, new UnitOfWorkOptions(true));
+
+        // 注册全局监听器，在创建时添加上下文
+        // （可通过 UnitOfWork.addDisposedListener 方式，
+        //   或继承 UnitOfWorkManager 覆写 begin() 方法）
+        return manager;
+    }
+}
+```
+
+在每个工作单元中编程式注册上下文：
+
+```java
+@Autowired
+private UnitOfWorkAccessor accessor;
+
+public void doSomething() {
+    UnitOfWork uow = accessor.getCurrentUnitOfWork();
+    uow.getOrAddContext("db", () -> new JdbcTransactionContext(dataSource.getConnection()));
+    // ... 所有数据库操作共享此上下文 ...
+}
+```
+
+**嵌套工作单元：**
+
+```java
+@Service
+public class OrderFacade {
+
+    @Autowired
+    private UnitOfWorkManager manager;
+
+    @UnitOfWork
+    public void checkout(Order order) {
+        // 外层工作单元自动开始
+        paymentService.charge(order);    // 参与外层 UOW
+        inventoryService.reserve(order); // 参与外层 UOW
+    }
+}
+
+@Service
+@UnitOfWork
+public class PaymentService {
+    // 方法自动加入环境工作单元
+    // 除非使用 .begin(..., true) 开启新事务
 }
 ```
 
@@ -164,9 +296,17 @@ public class JdbcTransactionContext implements UnitOfWorkContext {
 ## Maven
 
 ```xml
+<!-- 核心工作单元抽象 -->
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>unit-of-work</artifactId>
+    <version>${euonia.version}</version>
+</dependency>
+
+<!-- Spring Boot AOP 集成（自动配置 + 切面） -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>spring</artifactId>
     <version>${euonia.version}</version>
 </dependency>
 ```

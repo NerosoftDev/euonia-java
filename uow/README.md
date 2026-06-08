@@ -93,6 +93,8 @@ try (UnitOfWork uow = manager.begin(new UnitOfWorkOptions(true), false)) {
 
 ### Annotation-driven (with AOP)
 
+Add the `@UnitOfWork` annotation to your service classes or methods:
+
 ```java
 import com.euonia.uow.annotation.UnitOfWork;
 
@@ -107,6 +109,136 @@ public class OrderService implements UnitOfWorkEnabled {
     public List<Order> findOrders() {
         // Read-only — no unit of work
     }
+}
+```
+
+### Spring Boot Integration
+
+Add the `spring` module dependency:
+
+```xml
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>spring</artifactId>
+    <version>${euonia.version}</version>
+</dependency>
+```
+
+The auto-configuration (`UnitOfWorkAutoConfiguration`) registers:
+- `UnitOfWorkAccessor` — thread-local holder
+- `UnitOfWorkManager` — entry point for creating units of work
+- `UnitOfWorkAspect` — AOP aspect wrapping `@UnitOfWork`-annotated methods
+
+**How the aspect works:**
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Aspect as UnitOfWorkAspect
+    participant Manager as UnitOfWorkManager
+    participant UOW as UnitOfWork
+    participant Service
+
+    Caller->>Aspect: call @UnitOfWork method
+    Aspect->>Manager: begin(options, false)
+    Manager->>UOW: create & initialize
+    Aspect->>Service: proceed()
+    alt success
+        Service-->>Aspect: return result
+        Aspect->>UOW: completeAsync()
+        UOW->>UOW: saveChanges → handlers → listeners
+    else exception
+        Service--xAspect: throws
+        Aspect->>UOW: close() → failed listeners
+    end
+    Aspect->>UOW: close() → disposed listeners
+    Aspect-->>Caller: return result / throw
+```
+
+**Service example:**
+
+```java
+@Service
+@UnitOfWork
+public class OrderService {
+
+    private final JdbcTemplate jdbc;
+    private final RabbitTemplate rabbit;
+
+    public OrderService(JdbcTemplate jdbc, RabbitTemplate rabbit) {
+        this.jdbc = jdbc;
+        this.rabbit = rabbit;
+    }
+
+    public void placeOrder(Order order) {
+        // DB insert and MQ publish happen in the same unit of work
+        jdbc.update("INSERT INTO orders ...");
+        rabbit.convertAndSend("order.exchange", "placed", order);
+        // On success: both are committed
+        // On failure: both are rolled back
+    }
+}
+```
+
+**Registering transactional contexts:**
+
+Use lifecycle listeners to register your contexts automatically:
+
+```java
+@Configuration
+public class UowContextConfig {
+
+    @Bean
+    public UnitOfWorkManager unitOfWorkManager(
+            UnitOfWorkAccessor accessor,
+            DataSource dataSource,
+            ConnectionFactory connectionFactory) {
+
+        UnitOfWorkManager manager = new UnitOfWorkManager(accessor, new UnitOfWorkOptions(true));
+
+        // Register a global listener to add contexts on creation
+        // (fired via UnitOfWork.addDisposedListener approach, or
+        //  subclass UnitOfWorkManager to override begin())
+        return manager;
+    }
+}
+```
+
+For programmatic context registration per unit of work:
+
+```java
+@Autowired
+private UnitOfWorkAccessor accessor;
+
+public void doSomething() {
+    UnitOfWork uow = accessor.getCurrentUnitOfWork();
+    uow.getOrAddContext("db", () -> new JdbcTransactionContext(dataSource.getConnection()));
+    // ... all DB operations share this context ...
+}
+```
+
+**Nested units of work:**
+
+```java
+@Service
+public class OrderFacade {
+
+    @Autowired
+    private UnitOfWorkManager manager;
+
+    @UnitOfWork
+    public void checkout(Order order) {
+        // Outer unit of work begins automatically
+        paymentService.charge(order);    // participates in outer UOW
+        inventoryService.reserve(order); // participates in outer UOW
+    }
+}
+
+@Service
+@UnitOfWork
+public class PaymentService {
+    // Methods automatically join the ambient unit of work
+    // unless .begin(..., true) is used for a new transaction
 }
 ```
 
@@ -164,9 +296,17 @@ public class JdbcTransactionContext implements UnitOfWorkContext {
 ## Maven
 
 ```xml
+<!-- Core unit-of-work abstraction -->
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>unit-of-work</artifactId>
+    <version>${euonia.version}</version>
+</dependency>
+
+<!-- Spring Boot AOP integration (auto-configuration + aspect) -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>spring</artifactId>
     <version>${euonia.version}</version>
 </dependency>
 ```
