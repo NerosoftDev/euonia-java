@@ -16,13 +16,19 @@ graph TD
         direction TB
         Domain --> Core
         OSBA --> Core
+        Pipeline --> Core
+        Spring --> Core
         Sample --> Domain
         Sample --> OSBA
+        Sample --> Pipeline
+        Sample --> Spring
     end
 
     style Core fill:#4A90D9,color:#fff
     style Domain fill:#50B86C,color:#fff
     style OSBA fill:#E8833A,color:#fff
+    style Pipeline fill:#E74C3C,color:#fff
+    style Spring fill:#2ECC71,color:#fff
     style Sample fill:#9B59B6,color:#fff
 ```
 
@@ -50,6 +56,55 @@ graph TD
 | `ApplicationEvent` / `ApplicationEventBase` | Application-level event base classes |
 | `EventAggregate` | Event metadata wrapper: id, eventId, typeName, originator, timestamp, sequence |
 | `@Audited` / `AuditRecord` / `AuditStore` | Change auditing support for domain entities |
+
+### Pipeline (`euonia-pipeline`)
+> Middleware pipeline framework inspired by ASP.NET Core pipeline pattern — chainable request/response processing with behaviors, delegates, and dependency injection integration.
+
+| Interface / Class | Description |
+|-------------------|-------------|
+| `Pipeline` | Pipeline builder: chain components via `use()`, build delegate, run async |
+| `PipelineBase` | Abstract base with component registration, reverse-chain build, and `@PipelineBehaviors` annotation support |
+| `PipelineDelegate` | `FunctionalInterface`: `CompletionStage<Void> invoke(Object context)` |
+| `PipelineBehavior` | Behavior interface: `CompletionStage<Void> handleAsync(Object, PipelineDelegate)` |
+| `PipelineFactory` / `DefaultPipelineFactory` | Factory for creating `Pipeline` and `RequestResponsePipeline` instances |
+| `DefaultPipelineProvider` | Default implementation resolving behaviors via `ServiceResolver` (reflection or DI) |
+| `RequestResponsePipeline<TRequest, TResponse>` | Typed pipeline with request/response — supports `runAsync(TRequest)` |
+| `RequestResponsePipelineBase<TRequest, TResponse>` | Abstract base for typed pipelines |
+| `RequestResponsePipelineBehavior<TRequest, TResponse>` | Typed behavior: `handleAsync(TRequest, PipelineDelegate)` |
+| `RequestResponsePipelineDelegate<TRequest, TResponse>` | Typed delegate: `CompletionStage<TResponse> invoke(TRequest)` |
+| `RequestPipelineDelegate<TRequest>` | Fire-and-forget typed delegate: `CompletionStage<Void> invoke(TRequest)` |
+| `@PipelineBehaviors` | Annotation to auto-attach behaviors by context type |
+
+**Key features:**
+- Fluent API: chain behaviors via `.use()` with lambda, class, or `@PipelineBehaviors` discovery
+- Supports both void-pipeline (`Pipeline`) and request/response pipeline (`RequestResponsePipeline`)
+- Delegate-based composition with reverse-chain construction (innermost executes first)
+- `ServiceResolver` abstraction enables both standalone and Spring-integrated usage
+- Async throughout via `CompletionStage`
+
+```java
+// Create a pipeline
+Pipeline pipeline = new DefaultPipelineProvider(resolver)
+    .use((ctx, next) -> next.invoke(ctx).thenRun(() -> System.out.println("Log: done")))
+    .use(LoggingBehavior.class);
+
+// Run
+pipeline.runAsync(new MyContext()).toCompletableFuture().join();
+```
+
+### Spring (`euonia-spring`)
+> Spring Framework integration module. Bridges `ServiceResolver` with Spring's `ApplicationContext` for seamless dependency injection in pipeline and other Euonia components.
+
+| Class | Description |
+|-------|-------------|
+| `ApplicationContextServiceResolver` | `ServiceResolver` implementation backed by Spring's `ApplicationContext` — supports `getBeanProvider`, `autowireBean`, and constructor-argument-based bean creation |
+| `ServiceResolverConfiguration` | Spring `@Configuration` auto-wiring `ServiceResolver` as a bean |
+
+**Key features:**
+- Enables Spring DI for pipeline behaviors and other Euonia components
+- Auto-wires Spring-managed beans into pipeline delegates
+- Fallback to reflection-based construction with autowiring support
+- Minimal setup: just `@Import(ServiceResolverConfiguration.class)` or component-scan
 
 ### OSBA (`euonia-osba`)
 > **Object-Oriented Scalable Business Architecture** — a rich business object framework with rule-based validation, property change tracking, state management, and reflection-driven factories.
@@ -109,20 +164,53 @@ The `sample` module demonstrates **Euonia framework integration with Spring Boot
 | Category | Technology |
 |----------|-----------|
 | **Language** | Java 17+ (sample uses Java 25) |
-| **Framework** | Spring Boot 4.0 (Spring MVC, Spring Data JPA) |
+| **Framework** | Spring Boot 4.0 (Spring MVC, Spring Data JPA, Spring Framework 7.0) |
 | **Database** | MySQL, H2 (in-memory for testing) |
 | **API Docs** | SpringDoc OpenAPI 3.0 |
 | **Build** | Maven |
 | **ID Generation** | Snowflake, UUID, ULID |
+| **Pipeline** | Custom middleware pipeline (chain-of-responsibility / middleware pattern) |
+| **DI Integration** | Spring `ApplicationContext` via `ServiceResolver` abstraction |
 
 ---
 
 ## Quick Start
 
+### Maven Dependencies
+
 ```xml
+<!-- Core utilities -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Pipeline middleware -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>pipeline</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Spring Integration -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>spring</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Business objects (OSBA) -->
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>osba</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Domain-Driven Design -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>domain</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
@@ -178,7 +266,7 @@ mvn spring-boot:run
 
 ## Donate
 
-<img alt="donate" width="512" src="https://github.com/realzhaorong/oss/blob/master/donate.png" />
+<img alt="donate" width="512" src="https://github.com/Codespilot/oss/blob/master/donate.png" />
 
 ---
 
