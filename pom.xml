@@ -15,6 +15,10 @@
         <module>uow</module>
         <module>spring</module>
         <module>sample</module>
+        <module>bus</module>
+        <module>bus-abstract</module>
+        <module>bus-rabbitmq</module>
+        <module>bus-inmemory</module>
     </modules>
 
     <name>euonia-parent</name>
