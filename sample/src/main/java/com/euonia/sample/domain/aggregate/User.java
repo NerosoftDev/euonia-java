@@ -2,24 +2,20 @@ package com.euonia.sample.domain.aggregate;
 
 import com.euonia.annotation.Required;
 import com.euonia.core.ObjectId;
-import com.euonia.domain.Aggregate;
 import com.euonia.factory.annotation.FactoryCreate;
-import com.euonia.osba.EditableObject;
 import com.euonia.osba.rules.LambdaRule;
 import com.euonia.osba.rules.RuleBase;
 import com.euonia.osba.rules.RuleContext;
 import com.euonia.reflection.DisplayName;
 import com.euonia.reflection.PropertyInfo;
+import com.euonia.sample.domain.EditableObjectBase;
+import com.euonia.sample.domain.event.UserCreatedEvent;
 import com.euonia.sample.persistent.UserRepository;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-@Component
-@Scope("prototype")
-public class User extends EditableObject<User> implements Aggregate<Long> {
+public class User extends EditableObjectBase<User, Long> {
 
     private final PropertyInfo<Long> id = registerProperty(Long.class, "id");
     @DisplayName("User Name")
@@ -29,10 +25,12 @@ public class User extends EditableObject<User> implements Aggregate<Long> {
     @DisplayName("User age")
     private final PropertyInfo<Integer> age = registerProperty(Integer.class, "age");
 
+    @Override
     public Long getId() {
         return getProperty(id);
     }
 
+    @Override
     public void setId(Long id) {
         loadProperty(this.id, id);
     }
@@ -65,6 +63,7 @@ public class User extends EditableObject<User> implements Aggregate<Long> {
         super.create();
         setName(name);
         setId(Objects.requireNonNull(ObjectId.snowflake().getValue(Long.class)));
+        raiseEvent(new UserCreatedEvent(getId(), name));
     }
 
     @Override
