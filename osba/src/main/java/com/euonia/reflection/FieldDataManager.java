@@ -56,12 +56,17 @@ public class FieldDataManager {
         return fieldData.getOrDefault(fieldName, null);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> FieldData<T> getFieldData(PropertyInfo<T> property) {
         return (FieldData<T>) getFieldData(property.getName());
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Retrieves the field data for the specified property, creating it if it does not already exist. This method is synchronized to ensure thread safety when accessing and modifying the field data map.
+     *
+     * @param <T> the type of the property
+     * @param property the property for which to retrieve or create the field data
+     * @return the field data for the specified property
+     */
     public synchronized <T> FieldData<T> getOrCreateFieldData(PropertyInfo<T> property) {
         if (!fieldData.containsKey(property.getName())) {
             var field = property.newFieldData(property.getName());
@@ -70,6 +75,13 @@ public class FieldDataManager {
         return (FieldData<T>) fieldData.get(property.getName());
     }
 
+    /**
+     * Sets the field data for the specified property and value, creating the field data if it does not already exist. This method is synchronized to ensure thread safety when accessing and modifying the field data map.
+     *
+     * @param <T> the type of the property
+     * @param property the property for which to set the field data
+     * @param value the value to set for the field data
+     */
     public <T> void setFieldData(PropertyInfo<T> property, T value) {
         FieldData<T> field = getOrCreateFieldData(property);
         field.setValue(value);

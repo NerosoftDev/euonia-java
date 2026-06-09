@@ -37,7 +37,7 @@ public class DataAnnotationRule<A extends Annotation> extends RuleBase {
      *                      to the property
      */
     public DataAnnotationRule(PropertyInfo<?> property, A annotation, Class<?> validatorType) {
-        super(property);
+        super(property, annotation.annotationType().getSimpleName());
         assert annotation != null : "Annotation cannot be null.";
         assert validatorType != null : "Validator type cannot be null.";
         this.annotation = annotation;

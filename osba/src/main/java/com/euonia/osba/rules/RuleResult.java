@@ -1,10 +1,10 @@
 package com.euonia.osba.rules;
 
-import com.euonia.reflection.PropertyInfo;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.euonia.reflection.PropertyInfo;
 
 /**
  * Represents the result of a rule execution, including whether the rule passed or failed,
@@ -15,7 +15,7 @@ public final class RuleResult {
     private final String description;
     private final RuleSeverity severity;
     private final String ruleName;
-    private final List<PropertyInfo<?>> properties = new ArrayList<PropertyInfo<?>>();
+    private final List<PropertyInfo<?>> properties = new ArrayList<>();
 
     public RuleResult(String ruleName) {
         this(ruleName, null, RuleSeverity.SUCCESS);
