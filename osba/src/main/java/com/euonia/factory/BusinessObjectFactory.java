@@ -5,12 +5,12 @@ import com.euonia.factory.annotation.*;
 import com.euonia.osba.*;
 import com.euonia.osba.abstracts.UseBusinessContext;
 import com.euonia.reflection.ObjectReflector;
+import com.euonia.reflection.ServiceResolver;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * BusinessObjectFactory is an implementation of the ObjectFactory interface that uses reflection to create, fetch, insert, update, save, execute, and delete business objects based on annotated factory methods.
@@ -19,16 +19,16 @@ import java.util.function.Function;
 @SuppressWarnings("UnusedReturnValue")
 public class BusinessObjectFactory implements ObjectFactory {
 
-    private Function<Class<?>, ?> beanFactory;
+    private ServiceResolver resolver;
 
     /**
      * Configures the BusinessObjectFactory to use the provided bean factory for object instantiation.
      *
-     * @param beanFactory the bean factory function to use for creating objects
+     * @param resolver the ServiceResolver to be used for resolving services, including the bean factory
      * @return the current instance of BusinessObjectFactory
      */
-    public BusinessObjectFactory use(Function<Class<?>, ?> beanFactory) {
-        this.beanFactory = beanFactory;
+    public BusinessObjectFactory use(ServiceResolver resolver) {
+        this.resolver = resolver;
         return this;
     }
 
@@ -173,10 +173,10 @@ public class BusinessObjectFactory implements ObjectFactory {
     @SuppressWarnings("unchecked")
     private <T> T getObjectInstance(Class<T> type) {
         T object = PriorityValueFinder.find(queue -> {
-            if (beanFactory != null) {
+            if (resolver != null) {
                 queue.add(() -> {
                     try {
-                        return (T) beanFactory.apply(type);
+                        return resolver.getService(type);
                     } catch (Exception e) {
                         return null;
                     }

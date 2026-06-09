@@ -1,6 +1,11 @@
-package com.euonia.domain;
+package com.euonia.sample.domain;
 
+import com.euonia.domain.Aggregate;
+import com.euonia.domain.HasDomainEvents;
 import com.euonia.domain.event.DomainEvent;
+import com.euonia.osba.EditableObject;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,15 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
-/**
- * The AggregateBase class is an abstract base class for implementing the Aggregate interface in a domain-driven design (DDD) context.
- * It provides a common implementation for managing domain events and their handlers within an aggregate root.
- * An aggregate is a cluster of domain objects that can be treated as a single unit for data changes.
- * The aggregate root is the main entity that controls access to the other entities within the aggregate and is responsible for enforcing the consistency of the aggregate as a whole.
- *
- * @param <ID> the type of the identifier for the aggregate, which must be comparable.
- */
-public abstract class AggregateBase<ID extends Comparable<ID>> extends EntityBase<ID> implements Aggregate<ID>, HasDomainEvents {
+@Component
+@Scope("prototype")
+public abstract class EditableObjectBase<T extends EditableObjectBase<T, ID>, ID extends Comparable<ID>> extends EditableObject<T> implements Aggregate<ID>, HasDomainEvents {
     private final List<DomainEvent> events = new ArrayList<>();
     private final ConcurrentMap<Class<? extends DomainEvent>, List<Consumer<DomainEvent>>> eventHandlers = new ConcurrentHashMap<>();
 
