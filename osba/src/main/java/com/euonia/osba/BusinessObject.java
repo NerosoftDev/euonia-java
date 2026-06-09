@@ -17,7 +17,7 @@ import com.euonia.reflection.PropertyInfo;
 import com.euonia.reflection.PropertyInfoManager;
 import com.euonia.security.UnauthorizedAccessException;
 
-public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable {
+public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable, AutoCloseable {
     private final List<PropertyInfo<?>> changedProperties = new ArrayList<>();
     private volatile FieldDataManager fieldManager;
     protected final PropertyChangeSupport support = new PropertyChangeSupport(this);
@@ -429,4 +429,10 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
         return registerProperty(new PropertyInfo<>(type, propertyName, friendlyName, getClass(), defaultValue));
     }
     // endregion
+
+
+    @Override
+    public void close() {
+
+    }
 }

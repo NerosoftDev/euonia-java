@@ -11,38 +11,35 @@ import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * Represents an editable business object that can be saved to a database or other persistent storage.
+ * This class extends ObservableObject and implements the Savable interface, providing a default implementation for the save method that includes validation and event handling.
+ *
+ * @param <T> the type of the editable object
+ */
 public abstract class EditableObject<T extends EditableObject<T>> extends ObservableObject<T> implements Savable<T> {
 
-    private final Publisher<SavedEventArgs> savedEventPublisher = new SubmissionPublisher<>();
+    private final SubmissionPublisher<SavedEventArgs> savedEventPublisher = new SubmissionPublisher<>();
 
+    /**
+     * Subscribes a listener to the onSaved event, which is triggered when the object is saved.
+     * The listener will receive a SavedEventArgs object containing information about the saved object, any errors that occurred during saving, and any user state that was passed to the save method.
+     *
+     * @param listener the listener to be notified when the object is saved
+     */
     public final void onSaved(Consumer<SavedEventArgs> listener) {
-        if (listener != null) {
-            savedEventPublisher.subscribe(new Subscriber<>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    subscription.request(Long.MAX_VALUE);
-                }
-
-                @Override
-                public void onNext(SavedEventArgs item) {
-                    listener.accept(item);
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            });
-        }
+        savedEventPublisher.consume(listener);
     }
 
+    /**
+     * Triggers the onSaved event with the provided information about the saved object, any errors that occurred during saving, and any user state that was passed to the save method.
+     *
+     * @param newObject the object that was saved
+     * @param error     any error that occurred during saving
+     * @param userState additional information passed to the onSaved event
+     */
     protected void onSaved(T newObject, Throwable error, Object userState) {
-        ((SubmissionPublisher<SavedEventArgs>) savedEventPublisher).submit(new SavedEventArgs(newObject, error, userState));
+        savedEventPublisher.submit(new SavedEventArgs(newObject, error, userState));
     }
 
     @Override
@@ -77,11 +74,6 @@ public abstract class EditableObject<T extends EditableObject<T>> extends Observ
         CompletableFuture<List<String>> validations;
 
         if (!isDeleted() || isCheckObjectRulesOnDelete()) {
-//            validations = getRules().checkObjectRulesAsync()
-//                                    .exceptionally(error -> {
-//                                        onSaved(null, error, userState);
-//                                        return null;
-//                                    });
             validations = getRules().checkObjectRulesAsync();
         } else {
             validations = CompletableFuture.completedFuture(List.of());
@@ -121,5 +113,11 @@ public abstract class EditableObject<T extends EditableObject<T>> extends Observ
     }
 
     protected void delete() {
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        savedEventPublisher.close();
     }
 }

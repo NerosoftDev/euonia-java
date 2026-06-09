@@ -188,7 +188,11 @@ public class BusinessObjectFactory implements ObjectFactory {
                                              .sorted((a, b) -> Integer.compare(b.getParameterCount(), a.getParameterCount()))
                                              .toList();
 
-                    var ctor = constructors.stream().findFirst().orElseThrow();
+                    var ctor = constructors.stream().findFirst().orElse(null);
+
+                    if(ctor == null) {
+                        throw new RuntimeException("No constructor found for type: " + type.getName());
+                    }
 
                     var parameters = ctor.getParameters();
                     if (parameters.length == 0) {
