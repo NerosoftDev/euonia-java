@@ -3,9 +3,9 @@ package com.euonia.domain;
 import com.euonia.domain.event.DomainEventBase;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 /**
@@ -18,10 +18,11 @@ import java.util.function.Consumer;
  */
 public abstract class AggregateBase<ID extends Comparable<ID>> extends EntityBase<ID> implements Aggregate<ID>, HasDomainEvents {
     private final List<DomainEventBase> events = new ArrayList<>();
-    private final Map<Class<? extends DomainEventBase>, Consumer<DomainEventBase>> eventHandlers = new HashMap<>();
+    private final ConcurrentMap<Class<? extends DomainEventBase>, List<Consumer<DomainEventBase>>> eventHandlers = new ConcurrentHashMap<>();
 
     public <E extends DomainEventBase> void registerEvent(Class<E> eventType, Consumer<E> handler) {
-        eventHandlers.put(eventType, event -> handler.accept(eventType.cast(event)));
+        eventHandlers.computeIfAbsent(eventType, k -> new ArrayList<>())
+                     .add(event -> handler.accept(eventType.cast(event)));
     }
 
     @Override
@@ -37,9 +38,9 @@ public abstract class AggregateBase<ID extends Comparable<ID>> extends EntityBas
 
     @Override
     public <E extends DomainEventBase> void applyEvent(E event) {
-        var handler = eventHandlers.getOrDefault(event.getClass(), null);
-        if (handler != null) {
-            handler.accept(event);
+        var handlers = eventHandlers.getOrDefault(event.getClass(), null);
+        if (handlers != null) {
+            handlers.forEach(handler -> handler.accept(event));
         }
     }
 
