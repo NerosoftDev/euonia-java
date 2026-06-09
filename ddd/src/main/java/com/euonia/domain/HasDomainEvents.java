@@ -1,6 +1,6 @@
 package com.euonia.domain;
 
-import com.euonia.domain.event.DomainEventBase;
+import com.euonia.domain.event.DomainEvent;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -18,7 +18,7 @@ public interface HasDomainEvents {
      *
      * @return the list of domain events raised by this aggregate
      */
-    List<DomainEventBase> getEvents();
+    List<DomainEvent> getEvents();
 
     /**
      * Registers a handler for a specific type of domain event. The handler will be invoked when an event of the specified type is raised.
@@ -27,7 +27,7 @@ public interface HasDomainEvents {
      * @param handler   the handler to be invoked when the event is raised
      * @param <E>       the type of the domain event
      */
-    <E extends DomainEventBase> void registerEvent(Class<E> eventType, Consumer<E> handler);
+    <E extends DomainEvent> void registerEvent(Class<E> eventType, Consumer<E> handler);
 
     /**
      * Raises a domain event. The event will be processed by the registered handlers.
@@ -35,7 +35,7 @@ public interface HasDomainEvents {
      * @param event the domain event to raise
      * @param <E>   the type of the domain event
      */
-    <E extends DomainEventBase> void raiseEvent(E event);
+    <E extends DomainEvent> void raiseEvent(E event);
 
     /**
      * Applies a domain event to the aggregate. This method is typically used to update the state of the aggregate based on the event.
@@ -43,7 +43,7 @@ public interface HasDomainEvents {
      * @param event the domain event to apply
      * @param <E>   the type of the domain event
      */
-    <E extends DomainEventBase> void applyEvent(E event);
+    <E extends DomainEvent> void applyEvent(E event);
 
     /**
      * Clears all domain events that have been raised by this aggregate.

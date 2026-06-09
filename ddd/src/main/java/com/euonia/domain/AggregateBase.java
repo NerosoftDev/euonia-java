@@ -1,6 +1,6 @@
 package com.euonia.domain;
 
-import com.euonia.domain.event.DomainEventBase;
+import com.euonia.domain.event.DomainEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,27 +17,27 @@ import java.util.function.Consumer;
  * @param <ID> the type of the identifier for the aggregate, which must be comparable.
  */
 public abstract class AggregateBase<ID extends Comparable<ID>> extends EntityBase<ID> implements Aggregate<ID>, HasDomainEvents {
-    private final List<DomainEventBase> events = new ArrayList<>();
-    private final ConcurrentMap<Class<? extends DomainEventBase>, List<Consumer<DomainEventBase>>> eventHandlers = new ConcurrentHashMap<>();
+    private final List<DomainEvent> events = new ArrayList<>();
+    private final ConcurrentMap<Class<? extends DomainEvent>, List<Consumer<DomainEvent>>> eventHandlers = new ConcurrentHashMap<>();
 
-    public <E extends DomainEventBase> void registerEvent(Class<E> eventType, Consumer<E> handler) {
+    public <E extends DomainEvent> void registerEvent(Class<E> eventType, Consumer<E> handler) {
         eventHandlers.computeIfAbsent(eventType, k -> new ArrayList<>())
                      .add(event -> handler.accept(eventType.cast(event)));
     }
 
     @Override
-    public List<DomainEventBase> getEvents() {
+    public List<DomainEvent> getEvents() {
         return List.copyOf(events);
     }
 
     @Override
-    public <E extends DomainEventBase> void raiseEvent(E event) {
+    public <E extends DomainEvent> void raiseEvent(E event) {
         applyEvent(event);
         events.add(event);
     }
 
     @Override
-    public <E extends DomainEventBase> void applyEvent(E event) {
+    public <E extends DomainEvent> void applyEvent(E event) {
         var handlers = eventHandlers.getOrDefault(event.getClass(), null);
         if (handlers != null) {
             handlers.forEach(handler -> handler.accept(event));
@@ -51,7 +51,7 @@ public abstract class AggregateBase<ID extends Comparable<ID>> extends EntityBas
 
     @Override
     public void attachEvents() {
-        for (DomainEventBase event : events) {
+        for (DomainEvent event : events) {
             event.attach(this);
         }
     }
