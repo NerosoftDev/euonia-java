@@ -21,13 +21,22 @@ public class UserController {
     @PostMapping()
     public ResponseEntity<String> createUser(@RequestBody Map<String, Object> params) {
         var user = factory.create(User.class, params.getOrDefault("name", "Default Name"));
-        user.save(false);
-        return ResponseEntity.ok("User created with name: " + user.getName());
+        try (user) {
+            user.onSaved((args) -> {
+                System.out.println("User saved: " + ((User) args.getNewObject()).getEvents().size());
+            });
+            user.setAge(20);
+            user.save(false);
+            return ResponseEntity.ok("User created with name: " + user.getName());
+        }
+
     }
 
     @GetMapping("{id}")
     public ResponseEntity<String> getUser(@PathVariable long id) {
         var user = factory.fetch(User.class, id);
-        return ResponseEntity.ok("User fetched with name: " + user.getName());
+        try (user) {
+            return ResponseEntity.ok("User fetched with name: " + user.getName());
+        }
     }
 }
