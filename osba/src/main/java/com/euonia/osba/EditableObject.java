@@ -1,15 +1,14 @@
 package com.euonia.osba;
 
-import com.euonia.osba.abstracts.Savable;
-import com.euonia.osba.rules.BrokenRule;
-import com.euonia.osba.rules.RuleCheckException;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow.*;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.euonia.osba.abstracts.Savable;
+import com.euonia.osba.rules.BrokenRule;
+import com.euonia.osba.rules.RuleCheckException;
 
 /**
  * Represents an editable business object that can be saved to a database or other persistent storage.

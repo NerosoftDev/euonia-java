@@ -46,18 +46,19 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
     }
 
     private void initializeRules() {
-        var rules = RuleManager.getRules(this.getClass());
-        if (rules.isInitialized()) {
+        var rulesOfType = RuleManager.getRules(this.getClass());
+        if (rulesOfType.isInitialized()) {
             return;
         }
-        synchronized (rules) {
-            if (rules.isInitialized()) {
+        synchronized (rulesOfType) {
+            if (rulesOfType.isInitialized()) {
                 return;
             }
 
             try {
+                getRules().addDataAnnotationRules();
                 addRules();
-                rules.setInitialized(true);
+                rulesOfType.setInitialized(true);
             } catch (Exception e) {
                 RuleManager.cleanRules(this.getClass());
                 throw e;
@@ -65,6 +66,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
         }
     }
 
+    @SuppressWarnings("DoubleCheckedLocking")
     public FieldDataManager getFieldManager() {
         if (fieldManager == null) {
             synchronized (this) {
@@ -78,6 +80,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     private volatile Rules rules;
 
+    @SuppressWarnings("DoubleCheckedLocking")
     protected Rules getRules() {
         if (rules == null) {
             synchronized (this) {
@@ -136,7 +139,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     @Override
     public BrokenRuleCollection getBrokenRules() {
-        return rules.getBrokenRules();
+        return getRules().getBrokenRules();
     }
 
     // endregion

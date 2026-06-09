@@ -1,5 +1,7 @@
 package com.euonia.osba.rules;
 
+import com.euonia.annotation.Validation;
+import com.euonia.osba.BusinessObject;
 import com.euonia.osba.abstracts.RuleCheckable;
 import com.euonia.reflection.PropertyInfo;
 
@@ -11,7 +13,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
- * Rules manages the execution of validation rules for a business object, tracking broken rules and notifying listeners when validation is complete.
+ * Rules manages the execution of validation rules for a business object,
+ * tracking broken rules and notifying listeners when validation is complete.
  */
 public final class Rules {
     private final RuleCheckable target;
@@ -33,6 +36,7 @@ public final class Rules {
      *
      * @return the RuleManager for the target object
      */
+    @SuppressWarnings("DoubleCheckedLocking")
     public RuleManager getRuleManager() {
         if (ruleManager == null) {
             synchronized (this) {
@@ -56,7 +60,8 @@ public final class Rules {
     }
 
     /**
-     * Gets the collection of broken rules that have been identified during rule checking.
+     * Gets the collection of broken rules that have been identified during rule
+     * checking.
      *
      * @return the collection of broken rules
      */
@@ -65,7 +70,8 @@ public final class Rules {
     }
 
     /**
-     * Determines whether the target object is valid based on the current collection of broken rules.
+     * Determines whether the target object is valid based on the current collection
+     * of broken rules.
      *
      * @return true if the target object is valid, false otherwise
      */
@@ -84,7 +90,8 @@ public final class Rules {
 
     /**
      * Gets whether rule checking is currently suppressed for the target object.
-     * When rule checking is suppressed, no rules will be executed and the object will be considered valid.
+     * When rule checking is suppressed, no rules will be executed and the object
+     * will be considered valid.
      *
      * @return true if rule checking is suppressed, false otherwise
      */
@@ -94,9 +101,11 @@ public final class Rules {
 
     /**
      * Sets whether rule checking is currently suppressed for the target object.
-     * When rule checking is suppressed, no rules will be executed and the object will be considered valid.
+     * When rule checking is suppressed, no rules will be executed and the object
+     * will be considered valid.
      *
-     * @param suppressRuleChecking true to suppress rule checking, false to enable it
+     * @param suppressRuleChecking true to suppress rule checking, false to enable
+     *                             it
      */
     public void setSuppressRuleChecking(boolean suppressRuleChecking) {
         this.suppressRuleChecking = suppressRuleChecking;
@@ -124,10 +133,13 @@ public final class Rules {
     }
 
     /**
-     * Asynchronously checks all validation rules for the target object and updates the collection of broken rules accordingly.
-     * The method returns a CompletableFuture that completes when all rules have been checked, providing a list of affected property names.
+     * Asynchronously checks all validation rules for the target object and updates
+     * the collection of broken rules accordingly.
+     * The method returns a CompletableFuture that completes when all rules have
+     * been checked, providing a list of affected property names.
      *
-     * @return a CompletableFuture that completes with a list of affected property names
+     * @return a CompletableFuture that completes with a list of affected property
+     *         names
      */
     public CompletableFuture<List<String>> checkObjectRulesAsync() {
         if (suppressRuleChecking || getRuleManager().getRules().isEmpty()) {
@@ -138,16 +150,16 @@ public final class Rules {
         brokenRules.clearRules();
         List<String> affectedProperties = new ArrayList<>();
         List<CompletableFuture<Void>> tasks = getRuleManager().getRules().stream()
-                                                              .sorted(Comparator.comparingInt(Rule::getPriority))
-                                                              .map(rule -> runRule(rule, affectedProperties))
-                                                              .toList();
+                .sorted(Comparator.comparingInt(Rule::getPriority))
+                .map(rule -> runRule(rule, affectedProperties))
+                .toList();
 
         return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new))
-                                .thenApply(ignored -> affectedProperties.stream().distinct().toList())
-                                .whenComplete((ignored, error) -> {
-                                    hasRunningRules = false;
-                                    notifyValidationComplete();
-                                });
+                .thenApply(ignored -> affectedProperties.stream().distinct().toList())
+                .whenComplete((ignored, error) -> {
+                    hasRunningRules = false;
+                    notifyValidationComplete();
+                });
     }
 
     private CompletableFuture<Void> runRule(Rule rule, List<String> affectedProperties) {
@@ -176,14 +188,16 @@ public final class Rules {
                     target.allRulesComplete();
                 }
             }
-        }) {{
-            setRule(rule);
-            setTarget(target);
-            if(rule.getProperty() == null){
-                System.out.println(rule.getName());
+        }) {
+            {
+                setRule(rule);
+                setTarget(target);
+                if (rule.getProperty() == null) {
+                    System.out.println(rule.getName());
+                }
+                setPropertyName(rule.getProperty().getName());
             }
-            setPropertyName(rule.getProperty().getName());
-        }};
+        };
         String propertyName = rule.getProperty().getName();
         if (propertyName != null) {
             brokenRules.clearRules(propertyName);
@@ -193,12 +207,48 @@ public final class Rules {
 
         runningRules.add(rule);
         return rule.executeAsync(context)
-                   .thenRun(context::complete);
+                .thenRun(context::complete);
     }
 
     private void notifyValidationComplete() {
         for (var listener : validationCompleteListeners) {
             listener.accept(brokenRules);
+        }
+    }
+
+    public void addDataAnnotationRules() {
+
+        if (!(target instanceof BusinessObject<?> businessObject)) {
+            return;
+        }
+
+        var registeredProperties = businessObject.getFieldManager().getRegisteredProperties();
+        if (registeredProperties == null) {
+            return;
+        }
+
+        for (var property : target.getClass().getDeclaredFields()) {
+
+            if (property.getType() == PropertyInfo.class) {
+                continue;
+            }
+
+            var annotations = property.getAnnotations();
+            for (var annotation : annotations) {
+                var validation = annotation.annotationType().getAnnotation(Validation.class);
+                if (validation != null) {
+                    var propertyInfo = registeredProperties.stream()
+                            .filter(p -> p.getField() != null && p.getField().getName().equals(property.getName()))
+                            .findFirst()
+                            .orElse(null);
+                    if (propertyInfo == null) {
+                        continue;
+                    }
+                    var validatorType = validation.validator();
+                    var rule = new DataAnnotationRule<>(propertyInfo, annotation, validatorType);
+                    addRule(rule);
+                }
+            }
         }
     }
 }
