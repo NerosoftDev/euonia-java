@@ -1,13 +1,13 @@
 package com.euonia.osba;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
 import com.euonia.osba.abstracts.OperableProperty;
 import com.euonia.osba.abstracts.TrackableObject;
 import com.euonia.reflection.PropertyInfo;
-
-import java.util.concurrent.Flow.*;
-import java.util.concurrent.SubmissionPublisher;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * Represents an observable business object that can track its edit state (new, changed, deleted) and manage its busy state.
@@ -22,7 +22,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
     private boolean checkObjectRulesOnDelete;
     private final AtomicInteger busyCounter = new AtomicInteger();
     private final Object lock = new Object();
-    private final Publisher<Boolean> busyPublisher = new SubmissionPublisher<>();
+    private final List<Consumer<Boolean>> busyListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Gets the current edit state of the object, which indicates whether the object is new, changed, or deleted.
@@ -42,6 +42,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      *
      * @return true if the object is new, false otherwise
      */
+    @Override
     public final boolean isNew() {
         return state == ObjectEditState.NEW;
     }
@@ -51,6 +52,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      *
      * @return true if the object has been changed, false otherwise
      */
+    @Override
     public final boolean isChanged() {
         return state == ObjectEditState.CHANGED;
     }
@@ -60,6 +62,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      *
      * @return true if the object has been marked as deleted, false otherwise
      */
+    @Override
     public final boolean isDeleted() {
         return state == ObjectEditState.DELETED;
     }
@@ -115,6 +118,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      *
      * @return true if the object is busy, false otherwise
      */
+    @Override
     public boolean isBusy() {
         return isSelfBusy() || (getFieldManager().isBusy());
     }
@@ -135,6 +139,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      *
      * @return true if the object is savable, false otherwise
      */
+    @Override
     public boolean isSavable() {
         return isValid() && (hasChangedProperties() || isChanged()) && !isBusy();
     }
@@ -147,7 +152,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
         var updateValue = busyCounter.incrementAndGet();
 
         if (updateValue == 1) {
-            ((SubmissionPublisher<Boolean>) busyPublisher).submit(false);
+            notifyBusyChanged(true);
         }
     }
 
@@ -159,7 +164,7 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
         var updateValue = busyCounter.decrementAndGet();
 
         if (updateValue == 0) {
-            ((SubmissionPublisher<Boolean>) busyPublisher).submit(false);
+            notifyBusyChanged(false);
         }
     }
 
@@ -169,27 +174,27 @@ public abstract class ObservableObject<T extends ObservableObject<T>> extends Bu
      * @param listener the listener to be notified
      */
     public final void onBusyChanged(Consumer<Boolean> listener) {
-        busyPublisher.subscribe(new Subscriber<>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
+        addBusyChangedListener(listener);
+    }
 
-            @Override
-            public void onNext(Boolean item) {
-                listener.accept(item);
-            }
+    public final void addBusyChangedListener(Consumer<Boolean> listener) {
+        if (listener == null) {
+            return;
+        }
+        busyListeners.add(listener);
+    }
 
-            @Override
-            public void onError(Throwable throwable) {
+    public final void removeBusyChangedListener(Consumer<Boolean> listener) {
+        if (listener == null) {
+            return;
+        }
+        busyListeners.remove(listener);
+    }
 
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
+    private void notifyBusyChanged(boolean busy) {
+        for (Consumer<Boolean> listener : busyListeners) {
+            listener.accept(busy);
+        }
     }
 
     // region Get/Set Properties

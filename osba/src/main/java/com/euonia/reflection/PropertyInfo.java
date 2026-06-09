@@ -1,10 +1,10 @@
 package com.euonia.reflection;
 
-import com.euonia.osba.BusinessObject;
-
 import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.function.Supplier;
+
+import com.euonia.osba.BusinessObject;
 
 /**
  * Represents metadata about a property of a business object, including its name, type, default value, and display name.
@@ -72,12 +72,12 @@ public class PropertyInfo<T> implements Comparable<PropertyInfo<T>> {
         return field;
     }
 
-    public FieldData<?> newFieldData(String name) {
-        return new FieldData<T>(name);
+    public FieldData<T> newFieldData(String name) {
+        return new FieldData<>(name);
     }
 
     @Override
-    public int compareTo(PropertyInfo o) {
+    public int compareTo(PropertyInfo<T> o) {
         return this.name.compareTo(o.getName());
     }
 }

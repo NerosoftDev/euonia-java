@@ -1,9 +1,9 @@
 package com.euonia.osba.rules;
 
-import com.euonia.reflection.PropertyInfo;
-
 import java.lang.reflect.Member;
 import java.lang.reflect.Type;
+
+import com.euonia.reflection.PropertyInfo;
 
 /**
  * Provides a base implementation for rules, including common properties and methods.
@@ -30,10 +30,20 @@ public abstract class RuleBase implements Rule {
         this.property = property;
     }
 
+    protected RuleBase(PropertyInfo<?> property, String... names) {
+        var combinedNames = new String[names.length + 1];
+        combinedNames[0] = property.getName();
+        System.arraycopy(names, 0, combinedNames, 1, names.length);
+        name = generateName(getClass(), combinedNames);
+        this.property = property;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public final PropertyInfo<?> getProperty() {
         return property;
     }

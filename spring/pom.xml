@@ -32,6 +32,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.euonia</groupId>
+            <artifactId>pipeline</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>

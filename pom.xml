@@ -14,6 +14,7 @@
         <module>pipeline</module>
         <module>uow</module>
         <module>spring</module>
+        <module>sample</module>
     </modules>
 
     <name>euonia-parent</name>

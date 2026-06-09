@@ -1,5 +1,12 @@
 package com.euonia.osba;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
+
 import com.euonia.osba.abstracts.RuleCheckable;
 import com.euonia.osba.abstracts.UseBusinessContext;
 import com.euonia.osba.rules.BrokenRuleCollection;
@@ -10,14 +17,7 @@ import com.euonia.reflection.PropertyInfo;
 import com.euonia.reflection.PropertyInfoManager;
 import com.euonia.security.UnauthorizedAccessException;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
-
-public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable {
+public abstract class BusinessObject<B extends BusinessObject<B>> implements UseBusinessContext, RuleCheckable, AutoCloseable {
     private final List<PropertyInfo<?>> changedProperties = new ArrayList<>();
     private volatile FieldDataManager fieldManager;
     protected final PropertyChangeSupport support = new PropertyChangeSupport(this);
@@ -46,18 +46,19 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
     }
 
     private void initializeRules() {
-        var rules = RuleManager.getRules(this.getClass());
-        if (rules.isInitialized()) {
+        var rulesOfType = RuleManager.getRules(this.getClass());
+        if (rulesOfType.isInitialized()) {
             return;
         }
-        synchronized (rules) {
-            if (rules.isInitialized()) {
+        synchronized (rulesOfType) {
+            if (rulesOfType.isInitialized()) {
                 return;
             }
 
             try {
+                getRules().addDataAnnotationRules();
                 addRules();
-                rules.setInitialized(true);
+                rulesOfType.setInitialized(true);
             } catch (Exception e) {
                 RuleManager.cleanRules(this.getClass());
                 throw e;
@@ -65,6 +66,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
         }
     }
 
+    @SuppressWarnings("DoubleCheckedLocking")
     public FieldDataManager getFieldManager() {
         if (fieldManager == null) {
             synchronized (this) {
@@ -78,6 +80,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     private volatile Rules rules;
 
+    @SuppressWarnings("DoubleCheckedLocking")
     protected Rules getRules() {
         if (rules == null) {
             synchronized (this) {
@@ -136,7 +139,7 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     @Override
     public BrokenRuleCollection getBrokenRules() {
-        return rules.getBrokenRules();
+        return getRules().getBrokenRules();
     }
 
     // endregion
@@ -156,6 +159,10 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
 
     public final void addPropertyChangeListener(PropertyChangeListener listener) {
         support.addPropertyChangeListener(listener);
+    }
+
+    public final void removePropertyChangeListener(PropertyChangeListener listener) {
+        support.removePropertyChangeListener(listener);
     }
 
     protected void onPropertyChanged(String propertyName, Object oldValue, Object newValue) {
@@ -425,4 +432,10 @@ public abstract class BusinessObject<B extends BusinessObject<B>> implements Use
         return registerProperty(new PropertyInfo<>(type, propertyName, friendlyName, getClass(), defaultValue));
     }
     // endregion
+
+
+    @Override
+    public void close() {
+
+    }
 }

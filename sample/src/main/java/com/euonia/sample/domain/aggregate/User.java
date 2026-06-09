@@ -69,7 +69,7 @@ public class User extends EditableObjectBase<User, Long> {
     @Override
     protected void insert() {
         super.insert();
-        var repository = getBusinessContext().getOrCreateObject(UserRepository.class);
+        //var repository = getBusinessContext().getOrCreateObject(UserRepository.class);
     }
 
     protected void fetch(long id) {
