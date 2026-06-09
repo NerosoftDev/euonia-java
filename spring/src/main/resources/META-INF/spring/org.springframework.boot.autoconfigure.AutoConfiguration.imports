@@ -1,3 +1,4 @@
 com.euonia.uow.UnitOfWorkAutoConfiguration
 com.euonia.reflection.ServiceResolverConfiguration
 com.euonia.osba.OsbaConfiguration
+com.euonia.pipeline.PipelineConfiguration
