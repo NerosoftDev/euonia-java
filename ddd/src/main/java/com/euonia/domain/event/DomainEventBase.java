@@ -1,9 +1,9 @@
 package com.euonia.domain.event;
 
+import java.time.Instant;
+
 import com.euonia.core.ObjectId;
 import com.euonia.domain.Aggregate;
-
-import java.time.Instant;
 
 /**
  * Base implementation of a domain event, which can be extended by specific domain events.

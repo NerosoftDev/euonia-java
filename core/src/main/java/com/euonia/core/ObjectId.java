@@ -97,7 +97,7 @@ public final class ObjectId {
      * @return a new ObjectId
      */
     public static ObjectId random() {
-        return new ObjectId(UUID.randomUUID());
+        return new ObjectId(RandomId.generate(System.currentTimeMillis()));
     }
 
     /**
@@ -107,6 +107,62 @@ public final class ObjectId {
      */
     public static ObjectId ulid() {
         return new ObjectId(ULID.generate());
+    }
+
+    /**
+     * Generate a new random string id.
+     *
+     * @param seed the seed value
+     * @return a new random string id
+     */
+    public static String newRandomId(long seed) {
+        return RandomId.generate(seed);
+    }
+
+    /**
+     * Generate a new random string id using the current time as the seed.
+     *
+     * @return a new random string id
+     */
+    public static String newRandomId() {
+        return newRandomId(System.currentTimeMillis());
+    }
+
+    /**
+     * Generates a new Snowflake ID.
+     *
+     * @return a new Snowflake ID
+     */
+    public static long newSnowflakeId() {
+        return SnowflakeId.getInstance().nextId();
+    }
+
+    /**
+     * Generates a new GUID using the default generation strategy (SIMPLE).
+     *
+     * @return a new GUID
+     */
+    public static UUID newGuid() {
+        return GuidGenerator.generate(GuidType.SIMPLE);
+    }
+
+    /**
+     * Generates a new GUID based on the specified type.
+     *
+     * @param type the GUID generation strategy
+     * @return a new GUID
+     */
+    public static UUID newGuid(GuidType type) {
+        return GuidGenerator.generate(type);
+    }
+
+    /**
+     * Generates a new ULID string.
+     *
+     * @return a new ULID string
+     */
+    public static String newUlid() {
+        return ULID.generate();
     }
 
     public <T> T getValue(Class<T> type) {
