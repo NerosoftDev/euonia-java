@@ -7,6 +7,9 @@ package com.euonia.bus.exception;
  */
 public class MessageProcessingException extends RuntimeException {
 
+    /**
+     * Constructs a new MessageProcessingException with no detail message.
+     */
     public MessageProcessingException() {
         super();
     }
