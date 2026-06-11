@@ -4,19 +4,26 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-          <groupId>com.euonia</groupId>
-          <artifactId>parent</artifactId>
-          <version>${revision}</version>
+        <groupId>com.euonia</groupId>
+        <artifactId>parent</artifactId>
+        <version>${revision}</version>
     </parent>
 
-    <artifactId>bus-abstract</artifactId>
-    <name>euonia service bus abstract library</name>
+    <artifactId>bus-core</artifactId>
+    <name>euonia service bus core library</name>
 
     <dependencies>
         <dependency>
             <groupId>com.euonia</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>pipeline</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.euonia</groupId>
+            <artifactId>bus-abstract</artifactId>
             <version>${revision}</version>
         </dependency>
     </dependencies>
+
 </project>

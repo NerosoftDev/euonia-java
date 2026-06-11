@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>bus-inmemory</artifactId>
+    <name>euonia service bus in-memory implementation</name>
 
 </project>

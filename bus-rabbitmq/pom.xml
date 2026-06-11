@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>bus-rabbitmq</artifactId>
+    <name>euonia service bus rabbitmq implementation</name>
 
 </project>
