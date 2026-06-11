@@ -1,11 +1,11 @@
 package com.euonia.domain.event;
 
-import com.euonia.core.ObjectId;
-import com.euonia.reflection.TypeHelper;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.euonia.core.ObjectId;
+import com.euonia.reflection.TypeHelper;
 
 /**
  * Base implementation of the Event interface.
@@ -24,7 +24,7 @@ public abstract class EventBase implements Event {
     protected EventBase() {
         var type = getClass();
         properties.put(PROPERTY_ID, ObjectId.guid().toString());
-        setEventIntent(type.getName());
+        set(PROPERTY_EVENT_INTENT, type.getName());
     }
 
     public final String get(String property) {
@@ -43,42 +43,52 @@ public abstract class EventBase implements Event {
         return TypeHelper.coerceValue(castType, value);
     }
 
+    @Override
     public String getEventIntent() {
         return get(PROPERTY_EVENT_INTENT);
     }
 
+    @Override
     public void setEventIntent(String eventIntent) {
         set(PROPERTY_EVENT_INTENT, eventIntent);
     }
 
+    @Override
     public final String getEventId() {
         return get(PROPERTY_ID);
     }
 
+    @Override
     public final void setEventId(String eventId) {
         set(PROPERTY_ID, eventId);
     }
 
+    @Override
     public final long getSequence() {
         return sequence;
     }
 
+    @Override
     public final void setSequence(long sequence) {
         this.sequence = sequence;
     }
 
+    @Override
     public String getOriginatorType() {
         return get(PROPERTY_ORIGINATOR_TYPE);
     }
 
+    @Override
     public void setOriginatorType(String originatorType) {
         set(PROPERTY_ORIGINATOR_TYPE, originatorType);
     }
 
+    @Override
     public String getOriginatorId() {
         return get(PROPERTY_ORIGINATOR_ID);
     }
 
+    @Override
     public void setOriginatorId(String originatorId) {
         set(PROPERTY_ORIGINATOR_ID, originatorId);
     }
