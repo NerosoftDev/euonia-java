@@ -7,15 +7,15 @@ import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import com.euonia.reflection.ServiceResolver;
+import com.euonia.reflection.ServiceProvider;
 
 public class DefaultPipelineProvider extends PipelineBase {
     private static final String HANDLE_METHOD_NAME = "handle";
     private static final String HANDLE_METHOD_NAME_ASYNC = "handleAsync";
 
-    private final ServiceResolver resolver;
+    private final ServiceProvider resolver;
 
-    public DefaultPipelineProvider(ServiceResolver resolver) {
+    public DefaultPipelineProvider(ServiceProvider resolver) {
         this.resolver = resolver;
     }
 
@@ -40,7 +40,7 @@ public class DefaultPipelineProvider extends PipelineBase {
         return (Class<T>) type;
     }
 
-    private static CompletionStage<Void> invokeVoidLike(Method method, Object instance, Object context, ServiceResolver resolver) {
+    private static CompletionStage<Void> invokeVoidLike(Method method, Object instance, Object context, ServiceProvider resolver) {
         try {
             Object[] args = new Object[method.getParameterCount()];
             args[0] = context;

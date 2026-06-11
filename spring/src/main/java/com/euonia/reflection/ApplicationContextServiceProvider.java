@@ -6,10 +6,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 
-public class ApplicationContextServiceResolver implements ServiceResolver {
+public class ApplicationContextServiceProvider implements ServiceProvider {
     private final ApplicationContext applicationContext;
 
-    public ApplicationContextServiceResolver(ApplicationContext applicationContext) {
+    public ApplicationContextServiceProvider(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 

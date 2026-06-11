@@ -59,11 +59,11 @@ Each behavior is a **middleware** that receives the context and a `next` delegat
 | Interface / Class | Description |
 |-------------------|-------------|
 | `PipelineFactory` | Creates `Pipeline` or `RequestResponsePipeline` instances |
-| `DefaultPipelineFactory` | Default factory backed by `ServiceResolver` |
+| `DefaultPipelineFactory` | Default factory backed by `ServiceProvider` |
 | `DefaultPipelineProvider` | Default `Pipeline` implementation |
 | `DefaultRequestResponsePipelineProvider<TRequest, TResponse>` | Default typed pipeline implementation |
 | `@PipelineBehaviors` | Annotation to auto-discover behaviors from context type |
-| `ServiceResolver` | Abstraction for DI — standalone (`SimpleServiceResolver`) or Spring integration |
+| `ServiceProvider` | Abstraction for DI — standalone (`SimpleServiceProvider`) or Spring integration |
 
 ---
 
@@ -83,20 +83,26 @@ Each behavior is a **middleware** that receives the context and a `next` delegat
 
 ```java
 import com.euonia.pipeline.*;
-import com.euonia.reflection.SimpleServiceResolver;
+import com.euonia.reflection.SimpleServiceProvider;
 
 // Create resolver and pipeline
-var resolver = new SimpleServiceResolver();
-Pipeline pipeline = new DefaultPipelineProvider(resolver)
-    .use((ctx, next) -> {
-        System.out.println("Before: " + ctx);
-        return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
-    });
+var resolver = new SimpleServiceProvider();
+        Pipeline pipeline = new DefaultPipelineProvider(resolver)
+                .use((ctx, next) -> {
+                    System.out.println("Before: " + ctx);
+                    return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
+                });
 
 // Run
-pipeline.runAsync("Hello, Pipeline!")
-    .toCompletableFuture()
-    .join();
+pipeline.
+
+        runAsync("Hello, Pipeline!")
+    .
+
+        toCompletableFuture()
+    .
+
+        join();
 ```
 
 ### Step 3: Custom Behavior Class
@@ -167,9 +173,9 @@ requestResponsePipeline.use((req, next) ->
 );
 ```
 
-### Dependency Injection via ServiceResolver
+### Dependency Injection via ServiceProvider
 
-Behaviors can declare extra parameters beyond the context — they are resolved automatically from the `ServiceResolver`.
+Behaviors can declare extra parameters beyond the context — they are resolved automatically from the `ServiceProvider`.
 
 ```java
 // Define a service
@@ -235,7 +241,7 @@ pipeline.invoke(context).toCompletableFuture().join();
 
 ### Resolver Dependency Parameters in `handle` / `handleAsync`
 
-Behaviors written as plain classes (not implementing `PipelineBehavior`) are resolved via reflection. The first parameter is the **context**, and all subsequent parameters are **auto-injected** from the `ServiceResolver`:
+Behaviors written as plain classes (not implementing `PipelineBehavior`) are resolved via reflection. The first parameter is the **context**, and all subsequent parameters are **auto-injected** from the `ServiceProvider`:
 
 ```java
 // Plain class — method name must be "handle" or "handleAsync"
@@ -266,7 +272,7 @@ public class MyBehavior {
 @Configuration
 public class PipelineConfiguration {
     @Bean
-    public PipelineFactory pipelineFactory(ServiceResolver resolver) {
+    public PipelineFactory pipelineFactory(ServiceProvider resolver) {
         return new DefaultPipelineFactory(resolver);
     }
 }
@@ -274,7 +280,7 @@ public class PipelineConfiguration {
 
 ### Using Spring-Managed Beans in Behaviors
 
-Behaviors can inject any Spring bean through constructor parameters. The `ApplicationContextServiceResolver` (from `euonia-spring` module) handles auto-wiring automatically.
+Behaviors can inject any Spring bean through constructor parameters. The `ApplicationContextServiceProvider` (from `euonia-spring` module) handles auto-wiring automatically.
 
 ```java
 @Component
@@ -371,7 +377,7 @@ pipeline.use(A).use(B).use(C);
 
 ### Behavior Resolution Priority
 
-1. **`PipelineBehavior` interface** — if the class implements `PipelineBehavior`, it is resolved via `ServiceResolver.getServiceOrCreate()` and invoked through the interface contract.
+1. **`PipelineBehavior` interface** — if the class implements `PipelineBehavior`, it is resolved via `ServiceProvider.getServiceOrCreate()` and invoked through the interface contract.
 2. **Reflection-based** — otherwise, the framework searches for `handle` or `handleAsync` methods (returning `CompletionStage`). Constructor arguments are populated by prepending the `next` delegate.
 
 ### Annotation-Driven Auto-Discovery
@@ -395,8 +401,8 @@ When `runAsync(context)` is called (or `useOf(contextType, true)` explicitly), t
 The pipeline module is designed for testability:
 
 ```java
-// Unit test with SimpleServiceResolver
-var resolver = new SimpleServiceResolver();
+// Unit test with SimpleServiceProvider
+var resolver = new SimpleServiceProvider();
 var pipeline = new DefaultPipelineProvider(resolver);
 
 var results = new ArrayList<String>();
