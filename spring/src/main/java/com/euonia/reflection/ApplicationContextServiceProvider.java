@@ -1,6 +1,7 @@
 package com.euonia.reflection;
 
 import java.lang.reflect.Constructor;
+import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -14,8 +15,8 @@ public class ApplicationContextServiceProvider implements ServiceProvider {
     }
 
     @Override
-    public <T> T getService(Class<T> type) {
-        return applicationContext.getBeanProvider(type).getIfAvailable();
+    public <T> Optional<T> getService(Class<T> type) {
+        return Optional.ofNullable(applicationContext.getBeanProvider(type).getIfAvailable());
     }
 
     @Override

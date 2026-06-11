@@ -3,6 +3,7 @@ package com.euonia.reflection;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -23,21 +24,13 @@ public class SimpleServiceProvider implements ServiceProvider {
     }
 
     @Override
-    public <T> T getService(Class<T> type) {
-        Object service = services.get(type);
-        if (service == null) {
-            return null;
-        }
-        return (T) service;
+    public <T> Optional<T> getService(Class<T> type) {
+        return Optional.ofNullable((T) services.get(type));
     }
 
     @Override
     public <T> T getRequiredService(Class<T> type) {
-        T service = getService(type);
-        if (service == null) {
-            throw new IllegalStateException("Cannot resolve service: " + type.getName());
-        }
-        return service;
+        return getService(type).orElseThrow(() -> new IllegalStateException("Cannot resolve service: " + type.getName()));
     }
 
     @Override

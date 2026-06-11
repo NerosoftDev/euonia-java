@@ -17,10 +17,10 @@ public abstract class BaseApplicationService implements ApplicationService {
     }
 
     protected <T> T getService(Class<T> type) {
-        return (T) serviceProvider.getService(type);
+        return serviceProvider.getService(type).orElse(null);
     }
 
     protected UserPrincipal getUser() {
-        return serviceProvider.getService(UserPrincipal.class);
+        return serviceProvider.getService(UserPrincipal.class).orElse(null);
     }
 }

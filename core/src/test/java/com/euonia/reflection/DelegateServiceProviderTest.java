@@ -1,9 +1,9 @@
 package com.euonia.reflection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,8 +16,8 @@ class DelegateServiceProviderTest {
         SampleService instance = new SampleService();
         DelegateServiceProvider resolver = new DelegateServiceProvider(type -> type == SampleService.class ? instance : null);
 
-        assertSame(instance, resolver.getService(SampleService.class));
-        assertNull(resolver.getService(NeedsArguments.class));
+        assertSame(instance, resolver.getService(SampleService.class).orElse(null));
+        assertTrue(resolver.getService(NeedsArguments.class).isEmpty());
     }
 
     @Test

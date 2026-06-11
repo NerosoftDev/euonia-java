@@ -185,7 +185,7 @@ public class BusinessObjectFactory implements ObjectFactory {
             if (provider != null) {
                 queue.add(() -> {
                     try {
-                        return provider.getService(type);
+                        return provider.getService(type).orElse(null);
                     } catch (Exception e) {
                         return null;
                     }
