@@ -1,4 +1,13 @@
 package com.euonia.http;
 
-public class RequestContextAccessor {
+/**
+ * Defines the interface of a request context accessor.
+ */
+public interface RequestContextAccessor {
+    /**
+     * Get the current request context.
+     *
+     * @return the current request context
+     */
+    RequestContext getContext();
 }
