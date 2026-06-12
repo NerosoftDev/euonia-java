@@ -1,8 +1,8 @@
 package com.euonia.bus.convention;
 
-import com.euonia.bus.contract.Queue;
+import com.euonia.bus.contract.Unicast;
 import com.euonia.bus.contract.Request;
-import com.euonia.bus.contract.Topic;
+import com.euonia.bus.contract.Multicast;
 
 /**
  * DefaultMessageConvention is a simple implementation of the MessageConvention interface that uses class type checks to determine the message type.
@@ -17,12 +17,12 @@ public class DefaultMessageConvention implements MessageConvention {
 
     @Override
     public boolean isUnicastType(Class<?> messageType) {
-        return Queue.class.isAssignableFrom(messageType) && messageType != Queue.class;
+        return Unicast.class.isAssignableFrom(messageType) && messageType != Unicast.class;
     }
 
     @Override
     public boolean isMulticastType(Class<?> messageType) {
-        return Topic.class.isAssignableFrom(messageType) && messageType != Topic.class;
+        return Multicast.class.isAssignableFrom(messageType) && messageType != Multicast.class;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.euonia.bus.convention;
 
-import com.euonia.bus.annotation.Command;
-import com.euonia.bus.annotation.Event;
+import com.euonia.bus.annotation.Unicast;
+import com.euonia.bus.annotation.Multicast;
 import com.euonia.bus.annotation.Request;
 
 /**
@@ -19,13 +19,13 @@ public class AnnotationMessageConvention implements MessageConvention {
     @Override
     public boolean isUnicastType(Class<?> messageType) {
         assert messageType != null : MESSAGE_TYPE_NULL_ERROR;
-        return messageType.getAnnotation(Command.class) != null;
+        return messageType.getAnnotation(Unicast.class) != null;
     }
 
     @Override
     public boolean isMulticastType(Class<?> messageType) {
         assert messageType != null : MESSAGE_TYPE_NULL_ERROR;
-        return messageType.getAnnotation(Event.class) != null;
+        return messageType.getAnnotation(Multicast.class) != null;
     }
 
     @Override
