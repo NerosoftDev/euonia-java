@@ -19,6 +19,7 @@
         <module>bus-abstract</module>
         <module>bus-rabbitmq</module>
         <module>bus-inmemory</module>
+        <module>bus-kafka</module>
     </modules>
 
     <name>euonia-parent</name>
