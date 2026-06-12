@@ -20,10 +20,16 @@ graph TD
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
+        BusAbstract --> Core
+        BusCore --> BusAbstract
+        BusCore --> Pipeline
+        BusInmemory --> BusCore
+        BusRabbitmq --> BusCore
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
         Sample --> Spring
+        Sample --> BusCore
     end
 
     style Core fill:#4A90D9,color:#fff
@@ -32,6 +38,10 @@ graph TD
     style OSBA fill:#E8833A,color:#fff
     style Pipeline fill:#E74C3C,color:#fff
     style Spring fill:#2ECC71,color:#fff
+    style BusAbstract fill:#F39C12,color:#fff
+    style BusCore fill:#E67E22,color:#fff
+    style BusInmemory fill:#D35400,color:#fff
+    style BusRabbitmq fill:#C0392B,color:#fff
     style Sample fill:#9B59B6,color:#fff
 ```
 
@@ -106,6 +116,131 @@ Pipeline pipeline = new DefaultPipelineProvider(resolver)
 // 运行
 pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 ```
+
+### Bus Abstract（euonia-bus-abstract）
+> 消息总线抽象层：定义消息契约、约定、传输策略、元数据与标记注解。依赖 `core`。
+
+**核心契约**
+
+| 类 / 接口 | 作用 |
+|-------------------|---------|
+| `MessageContext` | 运行时消息上下文：回复、失败和完成事件发布 |
+| `MessageContextBase` | 线程安全的上下文实现，支持事件发布与关闭时回调 |
+| `HandlerContext` | 处理器级上下文契约，支持订阅与分发 |
+| `RoutedMessage` | 抽象消息信封：负载、ID、关联 ID、通道、元数据、头信息 |
+| `MessageEnvelope` | 最小化信封契约（messageId、correlationId、conversationId、channel） |
+| `MessageMetadata` | 强类型元数据映射，实现 `Map<String,Object>`，支持 `get(key, type)` |
+| `MessageHeaders` | 头信息常量：`MESSAGE_ID`、`CORRELATION_ID`、`CONVERSATION_ID`、`CONTENT_TYPE`、`REQUEST_TRACE_ID`、`AUTHORIZATION` |
+| `MessageBusOptions` | 总线配置：默认传输、管道行为开关、约定与策略访问 |
+| `Dispatcher` | 调度器契约：`List<String> determine(Class<?>)` |
+| `MessageRegistration` | 不可变注册记录：channel、messageType、handlerType、method |
+| `MessageConventionType` | 枚举：`NONE`、`UNICAST`、`MULTICAST`、`REQUEST` |
+
+**约定系统**
+
+| 类 / 接口 | 作用 |
+|-------------------|---------|
+| `MessageConvention` | 契约：`isUnicastType`、`isMulticastType`、`isRequestType` |
+| `DefaultMessageConvention` | 基于类继承的约定，使用 `Queue`/`Topic`/`Request` 契约接口 |
+| `AnnotationMessageConvention` | 基于注解的约定，使用 `@Command`/`@Event`/`@Request` 注解 |
+| `BaseMessageConvention` | 组合约定，支持缓存、可插拔约定与每种类型的谓词覆盖 |
+| `OverridableMessageConvention` | 代理约定，每种类型可单独设置谓词覆盖 |
+| `MessageConventionBuilder` | 流式构建器：`evaluateUnicast`、`evaluateMulticast`、`evaluateRequest`、`add(C)` |
+
+**传输策略**
+
+| 类 / 接口 | 作用 |
+|-------------------|---------|
+| `TransportStrategy` | 契约：`outgoing(Class<?>)`、`incoming(Class<?>)` |
+| `BaseTransportStrategy` | 组合策略，支持缓存和可插拔策略列表 |
+| `DefaultTransportStrategy` | 无操作兜底（始终返回 `false`） |
+| `AnnotationTransportStrategy` | 匹配 `@DispatchIn`/`@ReceiveIn` 注解的传输名称 |
+| `OverridableTransportStrategy` | 代理策略，可单独设置谓词覆盖 |
+| `LocalMessageTransportStrategy` | 匹配标注 `@LocalMessage` 的类型 |
+| `DistributedMessageTransportStrategy` | 匹配标注 `@DistributedMessage` 的类型 |
+
+**注解**
+
+| 注解 | 目标 | 作用 |
+|------------|--------|---------|
+| `@Subscribe` | 方法 | 声明消息处理器方法；`value` = 通道，`group` = 消费者组 |
+| `@Command` | 类型 | 标记为单播命令 |
+| `@Event` | 类型 | 标记为多播事件 |
+| `@Request` | 类型 | 标记为请求类型，含显式 `responseType` |
+| `@Channel` | 类型 | 覆盖默认通道名（默认全限定类名） |
+| `@Enqueue` | 类型 | 队列映射：`value`（队列名）与 `priority`（优先级） |
+| `@LocalMessage` | 类型 | 标记仅本地传输 |
+| `@DistributedMessage` | 类型 | 标记仅分布式传输 |
+| `@DispatchIn` | 类型 | 约束发送到指定传输 |
+| `@ReceiveIn` | 类型 | 约束从指定传输接收 |
+
+**契约接口**
+
+| 接口 | 作用 |
+|-----------|---------|
+| `Queue` | 标记：单播点对点消息 |
+| `Topic` | 标记：发布-订阅消息 |
+| `Request<R>` | 标记：请求-响应消息，响应类型为 `R` |
+| `Transport` | 传输抽象：`publishAsync`、`sendAsync`、`requestAsync` |
+
+**接收者**
+
+| 接口 | 作用 |
+|-----------|---------|
+| `Recipient` | 基础契约：`getName()`；继承 `AutoCloseable` |
+| `Executor` | `Recipient` 的标记子接口 |
+| `Subscriber` | `Recipient` 的标记子接口 |
+
+**事件**
+
+| 类 | 作用 |
+|-------|---------|
+| `MessageSubscribedEvent` | 处理器订阅时触发（channel、messageType、handlerType） |
+| `MessageReceivedEvent` | 传输层接收到消息时触发 |
+| `MessageAcknowledgedEvent` | 消息确认时触发（RECEIVED 类型） |
+| `MessageDeliveredEvent` | 消息成功投递时触发 |
+| `MessageHandledEvent` | 处理器完成处理时触发（消息 + 处理器类型） |
+| `MessageRepliedEvent` | 附带响应结果触发 |
+| `MessageProcessedEvent` | 基础事件：消息 + 上下文 + `MessageProcessType` |
+| `MessageProcessType` | 枚举：`SEND`、`DELIVERED`、`RECEIVED` |
+
+**异常**
+
+| 类 | 作用 |
+|-------|---------|
+| `MessageTypeException` | 无效或不支持的消息类型路由 |
+| `MessageProcessingException` | 处理器或处理过程失败 |
+| `MessageDeliverException` | 消息投递失败 |
+| `MessageTransportException` | 传输层失败 |
+
+### Bus Core（euonia-bus-core）
+> 运行时编排层：处理器发现、注册、调度与总线 API。依赖 `pipeline` 和 `bus-abstract`。
+
+| 类 / 接口 | 作用 |
+|-------------------|---------|
+| `Bus` | 顶层总线接口，支持 `send`、`publish`、`call` 操作 |
+| `MessageBus` | 总线实现骨架 |
+| `Handler<M, R>` | 强类型消息处理器接口 |
+| `StrategicDispatcher` | 通过配置策略解析传输名称的调度器 |
+| `MessageHandlerFinder` | 扫描 `@Subscribe` 方法与 `Handler` 实现 |
+| `DefaultHandlerContext` | 通过 `ServiceProvider` 在运行时解析和调用处理器 |
+| `MessageHandler` / `MessageHandlerFactory` | 处理器包装与工厂，支持按通道分发 |
+| `PipelineMessage` | 将消息执行包装为 `RequestResponsePipeline` |
+| `MessageCache` | 集中式通道命名（默认全限定类名，`@Channel` 可覆盖） |
+| `SendOptions` / `PublishOptions` / `CallOptions` | 强类型操作选项 |
+| `ExtendableOptions` | 可扩展选项基类 |
+
+**关键特性：**
+- 通过 `@Subscribe` 注解方法或 `Handler<M,R>` 接口自动发现处理器
+- 单处理器通道支持请求/响应（单播）；多处理器通道并行执行（多播）
+- `TransportStrategy` 系统映射消息类型到传输方式（本地 vs 分布式）
+- 与 Pipeline 集成，实现中间件风格的消息处理
+
+### Bus InMemory（euonia-bus-inmemory）
+> 内存传输适配器（骨架）。提供无需外部基础设施的本地消息分发。
+
+### Bus RabbitMQ（euonia-bus-rabbitmq）
+> RabbitMQ 传输适配器（骨架）。通过 RabbitMQ 代理提供分布式消息分发。
 
 ### Spring（euonia-spring）
 > Spring 集成模块。通过 `ApplicationContext` 与 `ServiceProvider` 建立桥接，为 Pipeline 及其它 Euonia 组件提供无缝依赖注入。
@@ -226,6 +361,27 @@ protected void addRules() {
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>domain-driven-design</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 消息总线（抽象层） -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-abstract</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 消息总线（核心运行时） -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 消息总线（RabbitMQ 传输） -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-rabbitmq</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```

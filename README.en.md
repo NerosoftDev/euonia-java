@@ -20,10 +20,16 @@ graph TD
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
+        BusAbstract --> Core
+        BusCore --> BusAbstract
+        BusCore --> Pipeline
+        BusInmemory --> BusCore
+        BusRabbitmq --> BusCore
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
         Sample --> Spring
+        Sample --> BusCore
     end
 
     style Core fill:#4A90D9,color:#fff
@@ -32,6 +38,10 @@ graph TD
     style OSBA fill:#E8833A,color:#fff
     style Pipeline fill:#E74C3C,color:#fff
     style Spring fill:#2ECC71,color:#fff
+    style BusAbstract fill:#F39C12,color:#fff
+    style BusCore fill:#E67E22,color:#fff
+    style BusInmemory fill:#D35400,color:#fff
+    style BusRabbitmq fill:#C0392B,color:#fff
     style Sample fill:#9B59B6,color:#fff
 ```
 
@@ -106,6 +116,131 @@ Pipeline pipeline = new DefaultPipelineProvider(resolver)
 // Run
 pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 ```
+
+### Bus Abstract (`euonia-bus-abstract`)
+> Foundational messaging abstractions: message contracts, conventions, transport strategies, metadata, and marker annotations for the bus layer. Depends on `core`.
+
+**Core Contracts**
+
+| Class / Interface | Purpose |
+|-------------------|---------|
+| `MessageContext` | Runtime message context: reply, failure, and completion event publishers |
+| `MessageContextBase` | Thread-safe context implementation with event publishing and close-time completion |
+| `HandlerContext` | Handler-level context contract for subscription and dispatch |
+| `RoutedMessage` | Abstract message envelope: payload, IDs, correlation ID, channel, metadata, headers |
+| `MessageEnvelope` | Minimal routed envelope contract (messageId, correlationId, conversationId, channel) |
+| `MessageMetadata` | Typed metadata map implementing `Map<String,Object>` with `get(key, type)` accessor |
+| `MessageHeaders` | Header name constants: `MESSAGE_ID`, `CORRELATION_ID`, `CONVERSATION_ID`, `CONTENT_TYPE`, `REQUEST_TRACE_ID`, `AUTHORIZATION` |
+| `MessageBusOptions` | Bus configuration: default transport, pipeline behavior toggle, convention & strategy access |
+| `Dispatcher` | Dispatch contract: `List<String> determine(Class<?>)` |
+| `MessageRegistration` | Immutable record: channel, messageType, handlerType, method |
+| `MessageConventionType` | Enum: `NONE`, `UNICAST`, `MULTICAST`, `REQUEST` |
+
+**Conventions**
+
+| Class / Interface | Purpose |
+|-------------------|---------|
+| `MessageConvention` | Contract: `isUnicastType`, `isMulticastType`, `isRequestType` |
+| `DefaultMessageConvention` | Class-hierarchy convention using `Queue`/`Topic`/`Request` contract interfaces |
+| `AnnotationMessageConvention` | Annotation-based convention using `@Command`/`@Event`/`@Request` annotations |
+| `BaseMessageConvention` | Composite convention with caches, pluggable conventions, and per-kind overrides |
+| `OverridableMessageConvention` | Delegating convention with settable predicate overrides for each type |
+| `MessageConventionBuilder` | Fluent builder: `evaluateUnicast`, `evaluateMulticast`, `evaluateRequest`, `add(C)` |
+
+**Transport Strategies**
+
+| Class / Interface | Purpose |
+|-------------------|---------|
+| `TransportStrategy` | Contract: `outgoing(Class<?>)`, `incoming(Class<?>)` |
+| `BaseTransportStrategy` | Composite strategy with caching and pluggable strategy list |
+| `DefaultTransportStrategy` | No-op fallback (always returns `false`) |
+| `AnnotationTransportStrategy` | Matches `@DispatchIn`/`@ReceiveIn` annotation transport names |
+| `OverridableTransportStrategy` | Delegate with settable predicate overrides |
+| `LocalMessageTransportStrategy` | Matches `@LocalMessage`-annotated types |
+| `DistributedMessageTransportStrategy` | Matches `@DistributedMessage`-annotated types |
+
+**Annotations**
+
+| Annotation | Target | Purpose |
+|------------|--------|---------|
+| `@Subscribe` | Method | Declares a message handler method; `value` = channel, `group` = consumer group |
+| `@Command` | Type | Marks a type as a unicast command |
+| `@Event` | Type | Marks a type as a multicast event |
+| `@Request` | Type | Marks a request type with explicit `responseType` |
+| `@Channel` | Type | Overrides the default channel name (FQCN) |
+| `@Enqueue` | Type | Queue mapping with `value` (queue name) and `priority` |
+| `@LocalMessage` | Type | Marks a type for local transport only |
+| `@DistributedMessage` | Type | Marks a type for distributed transport only |
+| `@DispatchIn` | Type | Constrains outgoing dispatch to specified transports |
+| `@ReceiveIn` | Type | Constrains incoming receive to specified transports |
+
+**Contracts**
+
+| Interface | Purpose |
+|-----------|---------|
+| `Queue` | Marker: unicast point-to-point message |
+| `Topic` | Marker: publish-subscribe message |
+| `Request<R>` | Marker: request-response message with response type `R` |
+| `Transport` | Transport abstraction: `publishAsync`, `sendAsync`, `requestAsync` |
+
+**Recipients**
+
+| Interface | Purpose |
+|-----------|---------|
+| `Recipient` | Base contract: `getName()`; extends `AutoCloseable` |
+| `Executor` | Marker sub-interface of `Recipient` |
+| `Subscriber` | Marker sub-interface of `Recipient` |
+
+**Events**
+
+| Class | Purpose |
+|-------|---------|
+| `MessageSubscribedEvent` | Emitted when a handler is subscribed (channel, messageType, handlerType) |
+| `MessageReceivedEvent` | Emitted when a message is received by transport |
+| `MessageAcknowledgedEvent` | Emitted when a message is acknowledged (RECEIVED type) |
+| `MessageDeliveredEvent` | Emitted when a message is successfully delivered |
+| `MessageHandledEvent` | Emitted when a handler completes processing (message + handler type) |
+| `MessageRepliedEvent` | Emitted with response result |
+| `MessageProcessedEvent` | Base event: message + context + `MessageProcessType` |
+| `MessageProcessType` | Enum: `SEND`, `DELIVERED`, `RECEIVED` |
+
+**Exceptions**
+
+| Class | Purpose |
+|-------|---------|
+| `MessageTypeException` | Invalid or unsupported message type for routing |
+| `MessageProcessingException` | Handler or processing failure |
+| `MessageDeliverException` | Message delivery failure |
+| `MessageTransportException` | Transport-layer failure |
+
+### Bus Core (`euonia-bus-core`)
+> Runtime orchestration layer: handler discovery, registration, dispatch, and bus API. Depends on `pipeline` and `bus-abstract`.
+
+| Class / Interface | Purpose |
+|-------------------|---------|
+| `Bus` | Top-level bus interface for `send`, `publish`, `call` operations |
+| `MessageBus` | Bus implementation shell |
+| `Handler<M, R>` | Typed message handler interface |
+| `StrategicDispatcher` | Dispatcher that resolves transport names via configured strategies |
+| `MessageHandlerFinder` | Scans classes for `@Subscribe` methods and `Handler` implementations |
+| `DefaultHandlerContext` | Runtime handler resolution and invocation via `ServiceProvider` |
+| `MessageHandler` / `MessageHandlerFactory` | Handler wrapper and factory for per-channel dispatch |
+| `PipelineMessage` | Wraps message execution through `RequestResponsePipeline` |
+| `MessageCache` | Centralized channel naming (defaults to FQCN, `@Channel` override) |
+| `SendOptions` / `PublishOptions` / `CallOptions` | Typed operation options |
+| `ExtendableOptions` | Base class for extensible option sets |
+
+**Key features:**
+- Discovers handlers via `@Subscribe` annotated methods or `Handler<M,R>` interface
+- Single-handler channels support request/response (unicast); multi-handler channels run in parallel (multicast)
+- `TransportStrategy` system maps message types to transports (local vs. distributed)
+- Integrates with Pipeline for middleware-style message processing
+
+### Bus InMemory (`euonia-bus-inmemory`)
+> In-memory transport adapter (scaffold). Provides local message dispatch without external infrastructure.
+
+### Bus RabbitMQ (`euonia-bus-rabbitmq`)
+> RabbitMQ transport adapter (scaffold). Provides distributed message dispatch via RabbitMQ broker.
 
 ### Spring (`euonia-spring`)
 > Spring Framework integration module. Bridges `ServiceProvider` with Spring's `ApplicationContext` for seamless dependency injection in pipeline and other Euonia components.
@@ -226,6 +361,27 @@ The `sample` module demonstrates **Euonia framework integration with Spring Boot
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>domain-driven-design</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Message Bus (abstractions) -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-abstract</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Message Bus (core runtime) -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Message Bus (RabbitMQ transport) -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-rabbitmq</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
