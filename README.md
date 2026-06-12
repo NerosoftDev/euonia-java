@@ -16,20 +16,22 @@ graph TD
         direction TB
         DDD --> Core
         DDD --> UoW
+        DDD --> Pipeline
         OSBA --> Core
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
+        Spring --> OSBA
+        Spring --> Pipeline
         BusAbstract --> Core
         BusCore --> BusAbstract
         BusCore --> Pipeline
-        BusInmemory --> BusCore
-        BusRabbitmq --> BusCore
+        BusInmemory --> BusAbstract
+        BusRabbitmq --> BusAbstract
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
         Sample --> Spring
-        Sample --> BusCore
     end
 
     style Core fill:#4A90D9,color:#fff
@@ -58,17 +60,22 @@ graph TD
 | `com.euonia.reflection` | `TypeHelper`、`GenericType<T>`、`@DisplayName` |
 
 ### DDD（euonia-domain-driven-design）
-> 领域驱动设计抽象：实体、聚合、值对象、领域事件与审计支持。
+> 领域驱动设计抽象：实体、聚合、值对象、领域事件、应用服务、用例与审计支持。
 
-| 类 | 作用 |
-|-------|---------|
-| `Entity<ID>` / `EntityBase<ID>` | 领域实体的接口与抽象基类（含标识） |
-| `Aggregate<ID>` / `AggregateBase<ID>` | 聚合根与领域事件管理（`raiseEvent`、`clearEvents`、`attachEvents`） |
-| `ValueObject<T>` | 不可变值对象，基于反射实现 `equals`、`hashCode`、`compareTo` |
-| `DomainEvent` / `DomainEventBase` | 领域事件契约，支持聚合挂载与事件元数据 |
-| `ApplicationEvent` / `ApplicationEventBase` | 应用层事件基类 |
-| `EventAggregate` | 事件元数据封装：id、eventId、typeName、originator、timestamp、sequence |
-| `@Audited` / `AuditRecord` / `AuditStore` | 领域对象变更审计支持 |
+| 包 | 类 | 作用 |
+|---------|-------|---------|
+| `com.euonia.domain` | `Entity<ID>` / `EntityBase<ID>` | 领域实体的接口与抽象基类（含标识） |
+| `com.euonia.domain` | `Aggregate<ID>` / `AggregateBase<ID>` | 聚合根与领域事件管理（`raiseEvent`、`clearEvents`、`attachEvents`） |
+| `com.euonia.domain` | `HasDomainEvents` | 管理领域事件和事件处理器的聚合契约 |
+| `com.euonia.domain` | `ValueObject<T>` | 不可变值对象，基于反射实现 `equals`、`hashCode`、`compareTo` |
+| `com.euonia.domain.event` | `Event` / `EventBase` | 核心事件契约：id、sequence、intent、originator 元数据 |
+| `com.euonia.domain.event` | `DomainEvent` / `DomainEventBase` | 领域事件，支持聚合挂载与 `EventAggregate` 映射 |
+| `com.euonia.domain.event` | `ApplicationEvent` / `ApplicationEventBase` | 应用层（集成）事件基类 |
+| `com.euonia.domain.event` | `EventAggregate` | 聚合形态的事件数据：id、eventId、typeName、originator、timestamp、sequence |
+| `com.euonia.domain.auditing` | `@Audited` / `AuditRecord` / `AuditStore` | 领域对象变更审计支持 |
+| `com.euonia.application` | `ApplicationService` / `BaseApplicationService` | 应用服务标记接口与含依赖解析的基类 |
+| `com.euonia.usecase` | `UseCase<I,O>` / `UseCasePresenter` | 输入/输出用例契约与响应式结果发布 |
+| `com.euonia.usecase` | `UseCaseSuccess` / `UseCaseFailure` | 成功与失败输出端口 |
 
 ### UoW（euonia-unit-of-work）
 > Unit of Work 抽象：定义事务边界、提交/回滚生命周期与一致性的持久化编排。

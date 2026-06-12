@@ -16,20 +16,22 @@ graph TD
         direction TB
         DDD --> Core
         DDD --> UoW
+        DDD --> Pipeline
         OSBA --> Core
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
+        Spring --> OSBA
+        Spring --> Pipeline
         BusAbstract --> Core
         BusCore --> BusAbstract
         BusCore --> Pipeline
-        BusInmemory --> BusCore
-        BusRabbitmq --> BusCore
+        BusInmemory --> BusAbstract
+        BusRabbitmq --> BusAbstract
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
         Sample --> Spring
-        Sample --> BusCore
     end
 
     style Core fill:#4A90D9,color:#fff
@@ -58,17 +60,22 @@ graph TD
 | `com.euonia.reflection` | `TypeHelper`, `GenericType<T>`, `@DisplayName` |
 
 ### DDD (`euonia-domain-driven-design`)
-> Domain-Driven Design abstractions: entities, aggregates, value objects, domain events, and auditing support.
+> Domain-Driven Design abstractions: entities, aggregates, value objects, domain events, application services, use cases, and auditing support.
 
-| Class | Purpose |
-|-------|---------|
-| `Entity<ID>` / `EntityBase<ID>` | Base interface and abstract class for domain entities with identity |
-| `Aggregate<ID>` / `AggregateBase<ID>` | Aggregate root with domain event management (`raiseEvent`, `clearEvents`, `attachEvents`) |
-| `ValueObject<T>` | Immutable value object with reflection-based `equals`, `hashCode`, and `compareTo` |
-| `DomainEvent` / `DomainEventBase` | Domain event contract with aggregate attachment and event metadata |
-| `ApplicationEvent` / `ApplicationEventBase` | Application-level event base classes |
-| `EventAggregate` | Event metadata wrapper: id, eventId, typeName, originator, timestamp, sequence |
-| `@Audited` / `AuditRecord` / `AuditStore` | Change auditing support for domain entities |
+| Package | Class | Purpose |
+|---------|-------|---------|
+| `com.euonia.domain` | `Entity<ID>` / `EntityBase<ID>` | Base interface and abstract class for domain entities with identity |
+| `com.euonia.domain` | `Aggregate<ID>` / `AggregateBase<ID>` | Aggregate root with domain event management (`raiseEvent`, `clearEvents`, `attachEvents`) |
+| `com.euonia.domain` | `HasDomainEvents` | Contract for aggregates that manage domain events and handlers |
+| `com.euonia.domain` | `ValueObject<T>` | Immutable value object with reflection-based `equals`, `hashCode`, and `compareTo` |
+| `com.euonia.domain.event` | `Event` / `EventBase` | Core event contract: id, sequence, intent, originator metadata |
+| `com.euonia.domain.event` | `DomainEvent` / `DomainEventBase` | Domain event with aggregate attachment and `EventAggregate` projection |
+| `com.euonia.domain.event` | `ApplicationEvent` / `ApplicationEventBase` | Application-level (integration) event base classes |
+| `com.euonia.domain.event` | `EventAggregate` | Aggregate-shaped event data: id, eventId, typeName, originator, timestamp, sequence |
+| `com.euonia.domain.auditing` | `@Audited` / `AuditRecord` / `AuditStore` | Change auditing support for domain entities |
+| `com.euonia.application` | `ApplicationService` / `BaseApplicationService` | Application service marker and base class with dependency resolution |
+| `com.euonia.usecase` | `UseCase<I,O>` / `UseCasePresenter` | Input/output use-case contract with reactive result publishing |
+| `com.euonia.usecase` | `UseCaseSuccess` / `UseCaseFailure` | Output ports for success and failure handling |
 
 ### UoW (`euonia-unit-of-work`)
 > Unit of Work abstraction for transaction boundaries, commit/rollback lifecycle, and consistent persistence orchestration.
