@@ -141,8 +141,8 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 | 类 / 接口 | 作用 |
 |-------------------|---------|
 | `MessageConvention` | 契约：`isUnicastType`、`isMulticastType`、`isRequestType` |
-| `DefaultMessageConvention` | 基于类继承的约定，使用 `Queue`/`Topic`/`Request` 契约接口 |
-| `AnnotationMessageConvention` | 基于注解的约定，使用 `@Command`/`@Event`/`@Request` 注解 |
+| `DefaultMessageConvention` | 基于类继承的约定，使用 `Unicast`/`Topic`/`Request` 契约接口 |
+| `AnnotationMessageConvention` | 基于注解的约定，使用 `@Unicast`/`@Multicast`/`@Request` 注解 |
 | `BaseMessageConvention` | 组合约定，支持缓存、可插拔约定与每种类型的谓词覆盖 |
 | `OverridableMessageConvention` | 代理约定，每种类型可单独设置谓词覆盖 |
 | `MessageConventionBuilder` | 流式构建器：`evaluateUnicast`、`evaluateMulticast`、`evaluateRequest`、`add(C)` |

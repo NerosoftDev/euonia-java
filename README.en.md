@@ -141,8 +141,8 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 | Class / Interface | Purpose |
 |-------------------|---------|
 | `MessageConvention` | Contract: `isUnicastType`, `isMulticastType`, `isRequestType` |
-| `DefaultMessageConvention` | Class-hierarchy convention using `Queue`/`Topic`/`Request` contract interfaces |
-| `AnnotationMessageConvention` | Annotation-based convention using `@Command`/`@Event`/`@Request` annotations |
+| `DefaultMessageConvention` | Class-hierarchy convention using `Unicast`/`Multicast`/`Request` contract interfaces |
+| `AnnotationMessageConvention` | Annotation-based convention using `@Unicast`/`@Multicast`/`@Request` annotations |
 | `BaseMessageConvention` | Composite convention with caches, pluggable conventions, and per-kind overrides |
 | `OverridableMessageConvention` | Delegating convention with settable predicate overrides for each type |
 | `MessageConventionBuilder` | Fluent builder: `evaluateUnicast`, `evaluateMulticast`, `evaluateRequest`, `add(C)` |
