@@ -2,7 +2,6 @@ package com.euonia.http;
 
 import java.util.Map;
 
-import com.euonia.reflection.ServiceProvider;
 import com.euonia.security.UserPrincipal;
 
 /**
@@ -11,12 +10,13 @@ import com.euonia.security.UserPrincipal;
 public final class RequestContext {
 
     private String connectionId;
+    private String requestUri;
+    private String requestMethod;
     private String remoteIpAddress;
     private int remotePort;
     private boolean webSocketRequest;
     private UserPrincipal user;
     private Map<String, String> requestHeaders;
-    private ServiceProvider requestServices;
     private String traceIdentifier;
 
     /**
@@ -28,6 +28,22 @@ public final class RequestContext {
 
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
+    }
+
+    public String getRequestUri() {
+        return requestUri;
+    }
+
+    public void setRequestUri(String requestUri) {
+        this.requestUri = requestUri;
+    }
+
+    public String getRequestMethod() {
+        return requestMethod;
+    }
+
+    public void setRequestMethod(String requestMethod) {
+        this.requestMethod = requestMethod;
     }
 
     /**
@@ -97,17 +113,6 @@ public final class RequestContext {
      */
     public String getRequestId() {
         return requestHeaders != null ? requestHeaders.get("Request-Id") : null;
-    }
-
-    /**
-     * Gets or sets the {@link ServiceProvider} that provides access to the request's service container.
-     */
-    public ServiceProvider getRequestServices() {
-        return requestServices;
-    }
-
-    public void setRequestServices(ServiceProvider requestServices) {
-        this.requestServices = requestServices;
     }
 
     /**
