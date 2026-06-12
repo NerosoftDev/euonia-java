@@ -1,4 +1,4 @@
 package com.euonia.bus.contract;
 
-public interface Queue {
+public interface Unicast {
 }
