@@ -2,42 +2,45 @@ package com.euonia.reflection;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
- * SimpleServiceResolver is a basic implementation of the ServiceResolver
- * interface
- * that uses a ConcurrentHashMap to store and retrieve service instances.
- * It allows for registering services and creating new instances using
- * reflection.
- * The createInstance method looks for a matching constructor based on the
- * provided
- * arguments and creates an instance of the specified type.
+ * DelegateServiceProvider is an implementation of the ServiceProvider interface
+ * that delegates service resolution to a provided Function.
+ * It allows for flexible service resolution by using a custom Function to
+ * retrieve services based on their class type.
+ * The createInstance method uses reflection to find a matching constructor and
+ * create an instance of the specified type with the provided constructor
+ * arguments.
  */
-public class SimpleServiceResolver implements ServiceResolver {
-    private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
+public class DelegateServiceProvider implements ServiceProvider {
 
-    public <T> void register(Class<T> type, T instance) {
-        services.put(type, instance);
+    private final Function<Class<?>, ?> beanFactory;
+
+    /**
+     * Creates a new instance of DelegateServiceProvider with the given bean factory
+     * function.
+     *
+     * @param beanFactory the function used to resolve services based on their class
+     *                    type
+     */
+    public DelegateServiceProvider(Function<Class<?>, ?> beanFactory) {
+        this.beanFactory = beanFactory;
     }
 
     @Override
-    public <T> T getService(Class<T> type) {
-        Object service = services.get(type);
-        if (service == null) {
-            return null;
-        }
-        return (T) service;
+    public <T> Optional<T> getService(Class<T> type) {
+        return Optional.ofNullable((T) beanFactory.apply(type));
     }
 
     @Override
     public <T> T getRequiredService(Class<T> type) {
-        T service = getService(type);
-        if (service == null) {
-            throw new IllegalStateException("Cannot resolve service: " + type.getName());
+        T instance = (T) beanFactory.apply(type);
+        if (instance == null) {
+            throw new IllegalStateException("Required service not found: " + type.getName());
         }
-        return service;
+        return instance;
     }
 
     @Override
@@ -55,7 +58,6 @@ public class SimpleServiceResolver implements ServiceResolver {
 
             try {
                 constructor.setAccessible(true);
-                @SuppressWarnings("unchecked")
                 T created = (T) constructor.newInstance(constructorArguments);
                 return created;
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {

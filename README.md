@@ -82,7 +82,7 @@ graph TD
 | `PipelineDelegate` | `FunctionalInterface`：`CompletionStage<Void> invoke(Object context)` |
 | `PipelineBehavior` | 行为接口：`CompletionStage<Void> handleAsync(Object, PipelineDelegate)` |
 | `PipelineFactory` / `DefaultPipelineFactory` | 创建 `Pipeline` 与 `RequestResponsePipeline` 的工厂 |
-| `DefaultPipelineProvider` | 默认实现，通过 `ServiceResolver` 解析行为（反射或 DI） |
+| `DefaultPipelineProvider` | 默认实现，通过 `ServiceProvider` 解析行为（反射或 DI） |
 | `RequestResponsePipeline<TRequest, TResponse>` | 强类型请求/响应管道，支持 `runAsync(TRequest)` |
 | `RequestResponsePipelineBase<TRequest, TResponse>` | 强类型管道抽象基类 |
 | `RequestResponsePipelineBehavior<TRequest, TResponse>` | 强类型行为：`handleAsync(TRequest, PipelineDelegate)` |
@@ -94,7 +94,7 @@ graph TD
 - Fluent API：支持通过 `.use()` 以 lambda、类或 `@PipelineBehaviors` 自动发现方式拼装行为
 - 同时支持无返回管道（`Pipeline`）和请求/响应管道（`RequestResponsePipeline`）
 - 基于委托的组合，采用反向链构建（最内层先执行）
-- `ServiceResolver` 抽象支持独立运行与 Spring 集成
+- `ServiceProvider` 抽象支持独立运行与 Spring 集成
 - 全链路异步（`CompletionStage`）
 
 ```java
@@ -108,18 +108,18 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 ```
 
 ### Spring（euonia-spring）
-> Spring 集成模块。通过 `ApplicationContext` 与 `ServiceResolver` 建立桥接，为 Pipeline 及其它 Euonia 组件提供无缝依赖注入。
+> Spring 集成模块。通过 `ApplicationContext` 与 `ServiceProvider` 建立桥接，为 Pipeline 及其它 Euonia 组件提供无缝依赖注入。
 
 | 类 | 说明 |
 |-------|-------------|
-| `ApplicationContextServiceResolver` | 基于 Spring `ApplicationContext` 的 `ServiceResolver` 实现，支持 `getBeanProvider`、`autowireBean` 与构造参数创建 |
-| `ServiceResolverConfiguration` | Spring `@Configuration`，自动注册 `ServiceResolver` Bean |
+| `ApplicationContextServiceProvider` | 基于 Spring `ApplicationContext` 的 `ServiceProvider` 实现，支持 `getBeanProvider`、`autowireBean` 与构造参数创建 |
+| `ServiceProviderConfiguration` | Spring `@Configuration`，自动注册 `ServiceProvider` Bean |
 
 **关键特性：**
 - 为 Pipeline 与其它 Euonia 组件提供 Spring DI 能力
 - 自动注入 Spring 管理的 Bean 到 Pipeline 委托/行为
 - 提供带自动装配的反射构建兜底能力
-- 极简接入：`@Import(ServiceResolverConfiguration.class)` 或组件扫描
+- 极简接入：`@Import(ServiceProviderConfiguration.class)` 或组件扫描
 
 ### OSBA（euonia-osba）
 > **面向对象可扩展业务架构**：提供富业务对象模型，支持规则校验、属性变更追踪、状态管理与反射驱动工厂。
@@ -185,7 +185,7 @@ protected void addRules() {
 | **构建** | Maven |
 | **ID 生成** | Snowflake、UUID、ULID |
 | **Pipeline** | 自定义中间件管道（责任链 / middleware 模式） |
-| **DI 集成** | 基于 `ServiceResolver` 的 Spring `ApplicationContext` 集成 |
+| **DI 集成** | 基于 `ServiceProvider` 的 Spring `ApplicationContext` 集成 |
 
 ---
 

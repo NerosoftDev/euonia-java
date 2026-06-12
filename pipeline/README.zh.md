@@ -58,11 +58,11 @@
 | 接口 / 类 | 描述 |
 |-----------|------|
 | `PipelineFactory` | 创建 `Pipeline` 或 `RequestResponsePipeline` 实例 |
-| `DefaultPipelineFactory` | 基于 `ServiceResolver` 的默认工厂 |
+| `DefaultPipelineFactory` | 基于 `ServiceProvider` 的默认工厂 |
 | `DefaultPipelineProvider` | 默认的 `Pipeline` 实现 |
 | `DefaultRequestResponsePipelineProvider<TRequest, TResponse>` | 默认的类型化管道实现 |
 | `@PipelineBehaviors` | 从上下文类型自动发现行为的注解 |
-| `ServiceResolver` | DI 抽象 — 独立使用（`SimpleServiceResolver`）或 Spring 集成 |
+| `ServiceProvider` | DI 抽象 — 独立使用（`SimpleServiceProvider`）或 Spring 集成 |
 
 ---
 
@@ -82,20 +82,26 @@
 
 ```java
 import com.euonia.pipeline.*;
-import com.euonia.reflection.SimpleServiceResolver;
+import com.euonia.reflection.SimpleServiceProvider;
 
 // 创建解析器和管道
-var resolver = new SimpleServiceResolver();
-Pipeline pipeline = new DefaultPipelineProvider(resolver)
-    .use((ctx, next) -> {
-        System.out.println("Before: " + ctx);
-        return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
-    });
+var resolver = new SimpleServiceProvider();
+        Pipeline pipeline = new DefaultPipelineProvider(resolver)
+                .use((ctx, next) -> {
+                    System.out.println("Before: " + ctx);
+                    return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
+                });
 
 // 运行
-pipeline.runAsync("Hello, Pipeline!")
-    .toCompletableFuture()
-    .join();
+pipeline.
+
+        runAsync("Hello, Pipeline!")
+    .
+
+        toCompletableFuture()
+    .
+
+        join();
 ```
 
 ### 第三步：自定义行为类
@@ -166,9 +172,9 @@ requestResponsePipeline.use((req, next) ->
 );
 ```
 
-### 通过 ServiceResolver 进行依赖注入
+### 通过 ServiceProvider 进行依赖注入
 
-行为可以声明除上下文以外的额外参数 — 它们会从 `ServiceResolver` 自动解析。
+行为可以声明除上下文以外的额外参数 — 它们会从 `ServiceProvider` 自动解析。
 
 ```java
 // 定义服务
@@ -234,7 +240,7 @@ pipeline.invoke(context).toCompletableFuture().join();
 
 ### 在 `handle` / `handleAsync` 中解析依赖参数
 
-使用普通类（不实现 `PipelineBehavior`）编写的行为通过反射解析。第一个参数是**上下文**，后续参数从 `ServiceResolver` **自动注入**：
+使用普通类（不实现 `PipelineBehavior`）编写的行为通过反射解析。第一个参数是**上下文**，后续参数从 `ServiceProvider` **自动注入**：
 
 ```java
 // 普通类 — 方法名必须为 "handle" 或 "handleAsync"
@@ -265,7 +271,7 @@ public class MyBehavior {
 @Configuration
 public class PipelineConfiguration {
     @Bean
-    public PipelineFactory pipelineFactory(ServiceResolver resolver) {
+    public PipelineFactory pipelineFactory(ServiceProvider resolver) {
         return new DefaultPipelineFactory(resolver);
     }
 }
@@ -273,7 +279,7 @@ public class PipelineConfiguration {
 
 ### 在行为中使用 Spring 管理的 Bean
 
-行为可以通过构造函数参数注入任何 Spring Bean。`ApplicationContextServiceResolver`（来自 `euonia-spring` 模块）会自动处理自动装配。
+行为可以通过构造函数参数注入任何 Spring Bean。`ApplicationContextServiceProvider`（来自 `euonia-spring` 模块）会自动处理自动装配。
 
 ```java
 @Component
@@ -370,7 +376,7 @@ pipeline.use(A).use(B).use(C);
 
 ### 行为解析优先级
 
-1. **`PipelineBehavior` 接口** — 如果类实现了 `PipelineBehavior`，则通过 `ServiceResolver.getServiceOrCreate()` 解析，并通过接口契约调用。
+1. **`PipelineBehavior` 接口** — 如果类实现了 `PipelineBehavior`，则通过 `ServiceProvider.getServiceOrCreate()` 解析，并通过接口契约调用。
 2. **基于反射** — 否则，框架搜索 `handle` 或 `handleAsync` 方法（返回 `CompletionStage`）。构造函数参数通过将 `next` 委托前置填充。
 
 ### 注解驱动的自动发现
@@ -394,8 +400,8 @@ public @interface PipelineBehaviors {
 管道模块设计为易于测试：
 
 ```java
-// 使用 SimpleServiceResolver 进行单元测试
-var resolver = new SimpleServiceResolver();
+// 使用 SimpleServiceProvider 进行单元测试
+var resolver = new SimpleServiceProvider();
 var pipeline = new DefaultPipelineProvider(resolver);
 
 var results = new ArrayList<String>();

@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ServiceResolverConfiguration {
+public class ServiceProviderConfiguration {
     @Bean
-    public ServiceResolver serviceResolver(ApplicationContext applicationContext) {
-        return new ApplicationContextServiceResolver(applicationContext);
+    public ServiceProvider serviceProvider(ApplicationContext applicationContext) {
+        return new ApplicationContextServiceProvider(applicationContext);
     }
 }

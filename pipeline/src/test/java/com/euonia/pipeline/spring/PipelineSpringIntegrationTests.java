@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Import;
 import com.euonia.pipeline.Pipeline;
 import com.euonia.pipeline.PipelineDelegate;
 import com.euonia.pipeline.PipelineFactory;
-import com.euonia.reflection.ServiceResolver;
+import com.euonia.reflection.ServiceProvider;
 
 class PipelineSpringIntegrationTests {
 
@@ -22,10 +22,10 @@ class PipelineSpringIntegrationTests {
     void should_create_pipeline_through_spring_configuration() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(TestConfiguration.class)) {
             PipelineFactory factory = context.getBean(PipelineFactory.class);
-            ServiceResolver resolver = context.getBean(ServiceResolver.class);
+            ServiceProvider provider = context.getBean(ServiceProvider.class);
 
             assertNotNull(factory);
-            assertNotNull(resolver);
+            assertNotNull(provider);
 
             PrefixService prefixService = context.getBean(PrefixService.class);
             Pipeline pipeline = factory.create();

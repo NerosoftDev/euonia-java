@@ -6,14 +6,14 @@ import java.util.concurrent.CompletionStage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
-import com.euonia.reflection.SimpleServiceResolver;
+import com.euonia.reflection.SimpleServiceProvider;
 
 class DefaultRequestResponsePipelineProviderTests {
 
     @Test
     void should_wrap_accumulate_with_behavior() {
         DefaultRequestResponsePipelineProvider<Integer, Integer> pipeline =
-                new DefaultRequestResponsePipelineProvider<>(new SimpleServiceResolver());
+                new DefaultRequestResponsePipelineProvider<>(new SimpleServiceProvider());
 
         pipeline.use(PlusOneBehavior.class);
 
@@ -26,7 +26,7 @@ class DefaultRequestResponsePipelineProviderTests {
 
     @Test
     void should_resolve_dependency_parameter_for_reflection_handler() {
-        SimpleServiceResolver resolver = new SimpleServiceResolver();
+        SimpleServiceProvider resolver = new SimpleServiceProvider();
         SuffixService suffixService = new SuffixService("-ok");
         resolver.register(SuffixService.class, suffixService);
 

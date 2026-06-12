@@ -1,21 +1,22 @@
 package com.euonia.reflection;
 
+import java.util.Optional;
+
 /**
- * ServiceResolver is an interface that defines methods for resolving and
+ * ServiceProvider is an interface that defines methods for resolving and
  * creating service instances.
  * Implementations of this interface can provide custom logic for retrieving and
  * instantiating services.
  */
-public interface ServiceResolver {
+public interface ServiceProvider {
     /**
-     * Retrieves a service instance of the specified type. If the service is not
-     * found, it returns null.
+     * Retrieves a service instance of the specified type.
      *
      * @param <T>  the type of the service
      * @param type the class of the service
-     * @return the service instance or null if not found
+     * @return an Optional containing the service instance, or empty if not found
      */
-    <T> T getService(Class<T> type);
+    <T> Optional<T> getService(Class<T> type);
 
     /**
      * Retrieves a required service instance of the specified type. If the service
@@ -51,7 +52,6 @@ public interface ServiceResolver {
      * @return the service instance or a newly created instance
      */
     default <T> T getServiceOrCreate(Class<T> type, Object... constructorArguments) {
-        T service = getService(type);
-        return service != null ? service : createInstance(type, constructorArguments);
+        return getService(type).orElseGet(() -> createInstance(type, constructorArguments));
     }
 }

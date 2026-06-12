@@ -7,15 +7,15 @@ import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import com.euonia.reflection.ServiceResolver;
+import com.euonia.reflection.ServiceProvider;
 
 public class DefaultRequestResponsePipelineProvider<TRequest, TResponse> extends RequestResponsePipelineBase<TRequest, TResponse> {
     private static final String HANDLE_METHOD_NAME = "handle";
     private static final String HANDLE_METHOD_NAME_ASYNC = "handleAsync";
 
-    private final ServiceResolver resolver;
+    private final ServiceProvider resolver;
 
-    public DefaultRequestResponsePipelineProvider(ServiceResolver resolver) {
+    public DefaultRequestResponsePipelineProvider(ServiceProvider resolver) {
         this.resolver = resolver;
     }
 
@@ -43,7 +43,7 @@ public class DefaultRequestResponsePipelineProvider<TRequest, TResponse> extends
     }
 
     @SuppressWarnings("unchecked")
-    private CompletionStage<TResponse> invokeTyped(Method method, Object instance, TRequest request, ServiceResolver resolver) {
+    private CompletionStage<TResponse> invokeTyped(Method method, Object instance, TRequest request, ServiceProvider resolver) {
         try {
             Object[] args = new Object[method.getParameterCount()];
             args[0] = request;

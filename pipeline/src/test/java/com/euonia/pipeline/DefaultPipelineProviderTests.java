@@ -8,13 +8,13 @@ import java.util.concurrent.CompletionStage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
-import com.euonia.reflection.SimpleServiceResolver;
+import com.euonia.reflection.SimpleServiceProvider;
 
 class DefaultPipelineProviderTests {
 
     @Test
     void should_run_attribute_behavior_before_accumulate() {
-        DefaultPipelineProvider pipeline = new DefaultPipelineProvider(new SimpleServiceResolver());
+        DefaultPipelineProvider pipeline = new DefaultPipelineProvider(new SimpleServiceProvider());
         TraceContext context = new TraceContext();
 
         pipeline.runAsync(context, ignored -> {
@@ -27,7 +27,7 @@ class DefaultPipelineProviderTests {
 
     @Test
     void should_resolve_method_parameters_from_service_resolver() {
-        SimpleServiceResolver resolver = new SimpleServiceResolver();
+        SimpleServiceProvider resolver = new SimpleServiceProvider();
         MarkerService markerService = new MarkerService();
         resolver.register(MarkerService.class, markerService);
 

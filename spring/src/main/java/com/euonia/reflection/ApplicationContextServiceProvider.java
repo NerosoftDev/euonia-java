@@ -1,21 +1,22 @@
 package com.euonia.reflection;
 
 import java.lang.reflect.Constructor;
+import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 
-public class ApplicationContextServiceResolver implements ServiceResolver {
+public class ApplicationContextServiceProvider implements ServiceProvider {
     private final ApplicationContext applicationContext;
 
-    public ApplicationContextServiceResolver(ApplicationContext applicationContext) {
+    public ApplicationContextServiceProvider(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
     @Override
-    public <T> T getService(Class<T> type) {
-        return applicationContext.getBeanProvider(type).getIfAvailable();
+    public <T> Optional<T> getService(Class<T> type) {
+        return Optional.ofNullable(applicationContext.getBeanProvider(type).getIfAvailable());
     }
 
     @Override

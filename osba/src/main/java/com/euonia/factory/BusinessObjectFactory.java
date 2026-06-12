@@ -1,16 +1,25 @@
 package com.euonia.factory;
 
-import com.euonia.core.PriorityValueFinder;
-import com.euonia.factory.annotation.*;
-import com.euonia.osba.*;
-import com.euonia.osba.abstracts.UseBusinessContext;
-import com.euonia.reflection.ObjectReflector;
-import com.euonia.reflection.ServiceResolver;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
+
+import com.euonia.core.PriorityValueFinder;
+import com.euonia.factory.annotation.FactoryCreate;
+import com.euonia.factory.annotation.FactoryDelete;
+import com.euonia.factory.annotation.FactoryExecute;
+import com.euonia.factory.annotation.FactoryFetch;
+import com.euonia.factory.annotation.FactoryInsert;
+import com.euonia.factory.annotation.FactoryUpdate;
+import com.euonia.osba.BusinessContext;
+import com.euonia.osba.ExecutableObject;
+import com.euonia.osba.ObjectEditState;
+import com.euonia.osba.ObservableObject;
+import com.euonia.osba.ReadOnlyObject;
+import com.euonia.osba.abstracts.UseBusinessContext;
+import com.euonia.reflection.ObjectReflector;
+import com.euonia.reflection.ServiceProvider;
 
 /**
  * BusinessObjectFactory is an implementation of the ObjectFactory interface that uses reflection to create, fetch, insert, update, save, execute, and delete business objects based on annotated factory methods.
@@ -19,16 +28,16 @@ import java.util.Objects;
 @SuppressWarnings("UnusedReturnValue")
 public class BusinessObjectFactory implements ObjectFactory {
 
-    private ServiceResolver resolver;
+    private ServiceProvider provider;
 
     /**
      * Configures the BusinessObjectFactory to use the provided bean factory for object instantiation.
      *
-     * @param resolver the ServiceResolver to be used for resolving services, including the bean factory
+     * @param resolver the ServiceProvider to be used for resolving services, including the bean factory
      * @return the current instance of BusinessObjectFactory
      */
-    public BusinessObjectFactory use(ServiceResolver resolver) {
-        this.resolver = resolver;
+    public BusinessObjectFactory use(ServiceProvider resolver) {
+        this.provider = resolver;
         return this;
     }
 
@@ -173,10 +182,10 @@ public class BusinessObjectFactory implements ObjectFactory {
     @SuppressWarnings("unchecked")
     private <T> T getObjectInstance(Class<T> type) {
         T object = PriorityValueFinder.find(queue -> {
-            if (resolver != null) {
+            if (provider != null) {
                 queue.add(() -> {
                     try {
-                        return resolver.getService(type);
+                        return provider.getService(type).orElse(null);
                     } catch (Exception e) {
                         return null;
                     }
