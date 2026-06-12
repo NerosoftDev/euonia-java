@@ -18,6 +18,7 @@ graph TD
         DDD --> UoW
         DDD --> Pipeline
         OSBA --> Core
+        UoW --> Core
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
