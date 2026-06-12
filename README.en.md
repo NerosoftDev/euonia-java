@@ -28,6 +28,7 @@ graph TD
         BusCore --> Pipeline
         BusInmemory --> BusAbstract
         BusRabbitmq --> BusAbstract
+        BusKafka --> BusAbstract
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
@@ -44,6 +45,7 @@ graph TD
     style BusCore fill:#E67E22,color:#fff
     style BusInmemory fill:#D35400,color:#fff
     style BusRabbitmq fill:#C0392B,color:#fff
+    style BusKafka fill:#8E44AD,color:#fff
     style Sample fill:#9B59B6,color:#fff
 ```
 
@@ -249,6 +251,9 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 ### Bus RabbitMQ (`euonia-bus-rabbitmq`)
 > RabbitMQ transport adapter (scaffold). Provides distributed message dispatch via RabbitMQ broker.
 
+### Bus Kafka (`euonia-bus-kafka`)
+> Kafka transport adapter (scaffold). Provides distributed message dispatch via Apache Kafka broker.
+
 ### Spring (`euonia-spring`)
 > Spring Framework integration module. Bridges `ServiceProvider` with Spring's `ApplicationContext` for seamless dependency injection in pipeline and other Euonia components.
 
@@ -389,6 +394,13 @@ The `sample` module demonstrates **Euonia framework integration with Spring Boot
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>bus-rabbitmq</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- Message Bus (Kafka transport) -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-kafka</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```

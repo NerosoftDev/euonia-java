@@ -28,6 +28,7 @@ graph TD
         BusCore --> Pipeline
         BusInmemory --> BusAbstract
         BusRabbitmq --> BusAbstract
+        BusKafka --> BusAbstract
         Sample --> DDD
         Sample --> OSBA
         Sample --> Pipeline
@@ -44,6 +45,7 @@ graph TD
     style BusCore fill:#E67E22,color:#fff
     style BusInmemory fill:#D35400,color:#fff
     style BusRabbitmq fill:#C0392B,color:#fff
+    style BusKafka fill:#8E44AD,color:#fff
     style Sample fill:#9B59B6,color:#fff
 ```
 
@@ -249,6 +251,9 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 ### Bus RabbitMQ（euonia-bus-rabbitmq）
 > RabbitMQ 传输适配器（骨架）。通过 RabbitMQ 代理提供分布式消息分发。
 
+### Bus Kafka（euonia-bus-kafka）
+> Kafka 传输适配器（骨架）。通过 Apache Kafka 代理提供分布式消息分发。
+
 ### Spring（euonia-spring）
 > Spring 集成模块。通过 `ApplicationContext` 与 `ServiceProvider` 建立桥接，为 Pipeline 及其它 Euonia 组件提供无缝依赖注入。
 
@@ -389,6 +394,13 @@ protected void addRules() {
 <dependency>
     <groupId>com.euonia</groupId>
     <artifactId>bus-rabbitmq</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 消息总线（Kafka 传输） -->
+<dependency>
+    <groupId>com.euonia</groupId>
+    <artifactId>bus-kafka</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
