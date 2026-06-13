@@ -49,7 +49,7 @@ public abstract class ExtendableOptions {
         this.requestTraceId = requestTraceId;
     }
 
-    public Boolean getEnablePipelineBehaviors() {
+    public Boolean isEnablePipelineBehaviors() {
         return enablePipelineBehaviors;
     }
 
