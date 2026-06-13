@@ -1,5 +1,6 @@
 package com.euonia.reflection;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,6 +20,16 @@ public interface ServiceProvider {
     <T> Optional<T> getService(Class<T> type);
 
     /**
+     * Retrieves a service instance of the specified type and service name.
+     *
+     * @param <T>         the type of the service
+     * @param type        the class of the service
+     * @param serviceName the name of the service
+     * @return an Optional containing the service instance, or empty if not found
+     */
+    <T> Optional<T> getService(Class<T> type, String serviceName);
+
+    /**
      * Retrieves a required service instance of the specified type. If the service
      * is not found, it throws an exception.
      *
@@ -28,6 +39,15 @@ public interface ServiceProvider {
      * @throws IllegalStateException if the service is not found
      */
     <T> T getRequiredService(Class<T> type);
+
+    /**
+     * Retrieves all service instances of the specified type.
+     *
+     * @param <T>  the type of the service
+     * @param type the class of the service
+     * @return a list of service instances
+     */
+    <T> List<T> getServices(Class<T> type);
 
     /**
      * Creates a new instance of the specified type using the provided constructor
