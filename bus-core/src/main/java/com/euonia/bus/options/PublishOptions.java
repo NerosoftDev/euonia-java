@@ -1,4 +1,4 @@
 package com.euonia.bus.options;
 
-public class PublishOptions {
+public class PublishOptions extends ExtendableOptions {
 }
