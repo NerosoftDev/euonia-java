@@ -11,8 +11,8 @@ import com.euonia.core.ObjectId;
  *
  * @param <T> the type of the payload contained in the message
  */
-public abstract class RoutedMessage<T> implements MessageEnvelope {
-    protected final static String MESSAGE_TYPE_KEY = "$nerosoft.euonia:message.type";
+public class RoutedMessage<T> implements MessageEnvelope {
+    private final static String MESSAGE_TYPE_KEY = "$nerosoft.euonia:message.type";
 
     private final MessageMetadata metadata = new MessageMetadata();
     private String messageId = ObjectId.newGuid(GuidType.SEQUENTIAL_AS_STRING).toString();
@@ -24,7 +24,7 @@ public abstract class RoutedMessage<T> implements MessageEnvelope {
     private long timestamp = Instant.EPOCH.toEpochMilli();
     private T payload;
 
-    protected RoutedMessage(T payload, String channel) {
+    public RoutedMessage(T payload, String channel) {
         setPayload(payload);
         setChannel(channel);
     }

@@ -41,6 +41,18 @@ public interface Transport {
 
     /**
      * Sends a request message and expects a response. This method is typically used for request-response communication patterns.
+     * The message is sent asynchronously, and the method returns a CompletableFuture that completes with the response when it is received. The responseType parameter specifies the expected type of the response message, allowing the transport to handle deserialization and type conversion appropriately.
+     *
+     * @param message      the request message to be sent
+     * @param responseType the expected type of the response message
+     * @param <M>          the type of the request message
+     * @param <R>          the type of the response message
+     * @return a CompletableFuture that completes with the response when it is received
+     */
+    <M, R> CompletableFuture<R> sendAsync(RoutedMessage<M> message, Class<R> responseType);
+
+    /**
+     * Sends a request message and expects a response. This method is typically used for request-response communication patterns.
      * The message is sent asynchronously, and the method returns a CompletableFuture that completes with the response when it is received.
      *
      * @param message the request message to be sent
