@@ -8,37 +8,37 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public abstract class PipelineBase implements Pipeline {
-    private final List<Function<PipelineDelegate, PipelineDelegate>> components = new ArrayList<>();
+public abstract class PipelineBase<C, R> implements Pipeline<C, R> {
+    private final List<Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>>> components = new ArrayList<>();
 
-    public List<Function<PipelineDelegate, PipelineDelegate>> getComponents() {
+    public List<Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>>> getComponents() {
         return List.copyOf(components);
     }
 
     @Override
-    public Pipeline use(Function<PipelineDelegate, PipelineDelegate> component) {
+    public Pipeline<C, R> use(Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>> component) {
         components.add(component);
         return this;
     }
 
     @Override
-    public Pipeline use(Function<PipelineDelegate, PipelineDelegate> component, int index) {
+    public Pipeline<C, R> use(Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>> component, int index) {
         components.add(index, component);
         return this;
     }
 
     @Override
-    public Pipeline use(BiFunction<Object, PipelineDelegate, CompletionStage<Void>> handler) {
-        return use(next -> context -> handler.apply(context, next));
+    public Pipeline<C, R> use(BiFunction<C, PipelineDelegate<C, R>, CompletionStage<R>> handler) {
+        return use(next -> request -> handler.apply(request, next));
     }
 
     @Override
-    public Pipeline use(Class<?> type, Object... args) {
+    public Pipeline<C, R> use(Class<?> type, Object... args) {
         return use(next -> getNext(next, type, args));
     }
 
     @Override
-    public Pipeline useOf(Class<?> contextType, boolean useAheadOfOthers) {
+    public Pipeline<C, R> useOf(Class<?> contextType, boolean useAheadOfOthers) {
         PipelineBehaviors annotation = contextType.getAnnotation(PipelineBehaviors.class);
         if (annotation == null) {
             return this;
@@ -59,12 +59,13 @@ public abstract class PipelineBase implements Pipeline {
     }
 
     @Override
-    public PipelineDelegate build() {
+    @SuppressWarnings("unchecked")
+    public PipelineDelegate<C, R> build() {
         try {
-            PipelineDelegate app = context -> CompletableFuture.completedFuture(null);
-            List<Function<PipelineDelegate, PipelineDelegate>> reversed = new ArrayList<>(components);
+            PipelineDelegate<C, R> app = request -> CompletableFuture.completedFuture((R) null);
+            List<Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>>> reversed = new ArrayList<>(components);
             Collections.reverse(reversed);
-            for (Function<PipelineDelegate, PipelineDelegate> component : reversed) {
+            for (Function<PipelineDelegate<C, R>, PipelineDelegate<C, R>> component : reversed) {
                 app = component.apply(app);
             }
             return app;
@@ -74,16 +75,16 @@ public abstract class PipelineBase implements Pipeline {
     }
 
     @Override
-    public CompletionStage<Void> runAsync(Object context) {
-        useOf(context.getClass(), true);
-        return build().invoke(context);
+    public CompletionStage<R> runAsync(C request) {
+        useOf(request.getClass(), true);
+        return build().invoke(request);
     }
 
     @Override
-    public CompletionStage<Void> runAsync(Object context, Function<Object, CompletionStage<Void>> accumulate) {
-        use((request, next) -> accumulate.apply(request));
-        return runAsync(context);
+    public CompletionStage<R> runAsync(C request, Function<C, CompletionStage<R>> accumulate) {
+        use((req, next) -> accumulate.apply(req));
+        return runAsync(request);
     }
 
-    protected abstract PipelineDelegate getNext(PipelineDelegate next, Class<?> type, Object... constructorArguments);
+    protected abstract PipelineDelegate<C, R> getNext(PipelineDelegate<C, R> next, Class<?> type, Object... constructorArguments);
 }

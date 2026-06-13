@@ -17,12 +17,14 @@ public class PipelineConfiguration {
 
     @Bean
     @Scope(BeanScope.PROTOTYPE)
+    @SuppressWarnings("rawtypes")
     public Pipeline pipeline(ServiceProvider resolver) {
-        return new DefaultPipelineProvider(resolver);
+        return new DefaultPipelineProvider<>(resolver);
     }
 
     @Bean
     @Scope(BeanScope.PROTOTYPE)
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public PipelineDelegate pipelineDelegate(Pipeline pipeline) {
         return pipeline.build();
     }

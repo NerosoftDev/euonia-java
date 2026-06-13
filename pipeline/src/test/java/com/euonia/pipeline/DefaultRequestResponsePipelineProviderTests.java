@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import com.euonia.reflection.SimpleServiceProvider;
 
-class DefaultRequestResponsePipelineProviderTests {
+class DefaultPipelineProviderTypedTests {
 
     @Test
     void should_wrap_accumulate_with_behavior() {
-        DefaultRequestResponsePipelineProvider<Integer, Integer> pipeline =
-                new DefaultRequestResponsePipelineProvider<>(new SimpleServiceProvider());
+        DefaultPipelineProvider<Integer, Integer> pipeline =
+                new DefaultPipelineProvider<>(new SimpleServiceProvider());
 
         pipeline.use(PlusOneBehavior.class);
 
@@ -30,9 +30,9 @@ class DefaultRequestResponsePipelineProviderTests {
         SuffixService suffixService = new SuffixService("-ok");
         resolver.register(SuffixService.class, suffixService);
 
-        DefaultRequestResponsePipelineProvider<String, String> pipeline =
-                new DefaultRequestResponsePipelineProvider<>(resolver);
-        pipeline.use(ReflectionRequestResponseBehavior.class);
+        DefaultPipelineProvider<String, String> pipeline =
+                new DefaultPipelineProvider<>(resolver);
+        pipeline.use(ReflectionPipelineBehavior.class);
 
         String value = pipeline.runAsync("input", CompletableFuture::completedFuture)
                 .toCompletableFuture()
@@ -41,9 +41,9 @@ class DefaultRequestResponsePipelineProviderTests {
         assertEquals("input-ok", value);
     }
 
-    static class PlusOneBehavior implements RequestResponsePipelineBehavior<Integer, Integer> {
+    static class PlusOneBehavior implements PipelineBehavior<Integer, Integer> {
         @Override
-        public CompletionStage<Integer> handleAsync(Integer context, RequestResponsePipelineDelegate<Integer, Integer> next) {
+        public CompletionStage<Integer> handleAsync(Integer context, PipelineDelegate<Integer, Integer> next) {
             return next.invoke(context).thenApply(value -> value + 1);
         }
     }
@@ -56,10 +56,10 @@ class DefaultRequestResponsePipelineProviderTests {
         }
     }
 
-    static class ReflectionRequestResponseBehavior {
-        private final RequestResponsePipelineDelegate<String, String> next;
+    static class ReflectionPipelineBehavior {
+        private final PipelineDelegate<String, String> next;
 
-        ReflectionRequestResponseBehavior(RequestResponsePipelineDelegate<String, String> next) {
+        ReflectionPipelineBehavior(PipelineDelegate<String, String> next) {
             this.next = next;
         }
 

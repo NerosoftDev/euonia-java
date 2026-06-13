@@ -2,6 +2,6 @@ package com.euonia.pipeline;
 
 import java.util.concurrent.CompletionStage;
 
-public interface PipelineBehavior {
-    CompletionStage<Void> handleAsync(Object context, PipelineDelegate next);
+public interface PipelineBehavior<C, R> {
+    CompletionStage<R> handleAsync(C context, PipelineDelegate<C, R> next);
 }
