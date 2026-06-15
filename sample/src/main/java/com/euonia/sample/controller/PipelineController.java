@@ -1,8 +1,8 @@
 package com.euonia.sample.controller;
 
 import com.euonia.pipeline.PipelineFactory;
-import com.euonia.pipeline.RequestResponsePipelineBehavior;
-import com.euonia.pipeline.RequestResponsePipelineDelegate;
+import com.euonia.pipeline.PipelineBehavior;
+import com.euonia.pipeline.PipelineDelegate;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +19,10 @@ import com.euonia.pipeline.PipelineBehaviors;
 
 @RestController
 @RequestMapping("/api/pipeline")
-public class PipelineDemoController {
+public class PipelineController {
     private final PipelineFactory pipelineFactory;
 
-    public PipelineDemoController(PipelineFactory pipelineFactory) {
+    public PipelineController(PipelineFactory pipelineFactory) {
         this.pipelineFactory = pipelineFactory;
     }
 
@@ -30,7 +30,7 @@ public class PipelineDemoController {
     public ResponseEntity<Map<String, Object>> echo(@RequestParam(defaultValue = "hello") String value) {
         EchoRequest request = new EchoRequest(value);
 
-        var pipeline = pipelineFactory.<EchoRequest, String>createRequestResponse();
+        var pipeline = pipelineFactory.<EchoRequest, String>create();
 
         pipeline.use(EchoSuffixBehavior.class);
 
@@ -48,17 +48,17 @@ public class PipelineDemoController {
     private record EchoRequest(String value) {
     }
 
-    private static class EchoUpperCaseBehavior implements RequestResponsePipelineBehavior<EchoRequest, String> {
+    private static class EchoUpperCaseBehavior implements PipelineBehavior<EchoRequest, String> {
         @Override
-        public CompletionStage<String> handleAsync(EchoRequest context, RequestResponsePipelineDelegate<EchoRequest, String> next) {
+        public CompletionStage<String> handleAsync(EchoRequest context, PipelineDelegate<EchoRequest, String> next) {
             return next.invoke(new EchoRequest(context.value().toUpperCase()));
         }
     }
 
     private static class EchoSuffixBehavior {
-        private final RequestResponsePipelineDelegate<EchoRequest, String> next;
+        private final PipelineDelegate<EchoRequest, String> next;
 
-        private EchoSuffixBehavior(RequestResponsePipelineDelegate<EchoRequest, String> next) {
+        private EchoSuffixBehavior(PipelineDelegate<EchoRequest, String> next) {
             this.next = next;
         }
 
