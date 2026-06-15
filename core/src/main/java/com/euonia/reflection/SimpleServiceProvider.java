@@ -30,6 +30,11 @@ public class SimpleServiceProvider implements ServiceProvider {
     }
 
     @Override
+    public <T> Optional<T> getService(Class<T> type, Class<?>... genericTypeArguments) {
+        return Optional.empty();
+    }
+
+    @Override
     public <T> Optional<T> getService(Class<T> type, String serviceName) {
         return Optional.ofNullable((T) services.get(type));
     }
@@ -41,6 +46,11 @@ public class SimpleServiceProvider implements ServiceProvider {
 
     @Override
     public <T> List<T> getServices(Class<T> type) {
+        return List.of();
+    }
+
+    @Override
+    public <T> List<T> getServices(Class<T> type, Class<?>... genericTypeArguments) {
         return List.of();
     }
 

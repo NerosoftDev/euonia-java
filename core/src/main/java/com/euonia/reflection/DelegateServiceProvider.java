@@ -36,6 +36,11 @@ public class DelegateServiceProvider implements ServiceProvider {
     }
 
     @Override
+    public <T> Optional<T> getService(Class<T> type, Class<?>... genericTypeArguments) {
+        return Optional.empty();
+    }
+
+    @Override
     public <T> Optional<T> getService(Class<T> type, String serviceName) {
         return Optional.ofNullable((T) beanFactory.apply(type));
     }
@@ -51,6 +56,11 @@ public class DelegateServiceProvider implements ServiceProvider {
 
     @Override
     public <T> List<T> getServices(Class<T> type) {
+        return List.of();
+    }
+
+    @Override
+    public <T> List<T> getServices(Class<T> type, Class<?>... genericTypeArguments) {
         return List.of();
     }
 
