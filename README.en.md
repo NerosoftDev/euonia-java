@@ -93,33 +93,28 @@ graph TD
 | `IUnitOfWorkAccessor` | Access current active unit-of-work context |
 
 ### Pipeline (`euonia-pipeline`)
-> Middleware pipeline framework inspired by ASP.NET Core pipeline pattern — chainable request/response processing with behaviors, delegates, and dependency injection integration.
+> Middleware pipeline framework inspired by ASP.NET Core pipeline pattern — unified `Pipeline<TRequest, TResponse>` with chainable behaviors, delegates, and dependency injection integration.
 
 | Interface / Class | Description |
 |-------------------|-------------|
-| `Pipeline` | Pipeline builder: chain components via `use()`, build delegate, run async |
-| `PipelineBase` | Abstract base with component registration, reverse-chain build, and `@PipelineBehaviors` annotation support |
-| `PipelineDelegate` | `FunctionalInterface`: `CompletionStage<Void> invoke(Object context)` |
-| `PipelineBehavior` | Behavior interface: `CompletionStage<Void> handleAsync(Object, PipelineDelegate)` |
-| `PipelineFactory` / `DefaultPipelineFactory` | Factory for creating `Pipeline` and `RequestResponsePipeline` instances |
-| `DefaultPipelineProvider` | Default implementation resolving behaviors via `ServiceProvider` (reflection or DI) |
-| `RequestResponsePipeline<TRequest, TResponse>` | Typed pipeline with request/response — supports `runAsync(TRequest)` |
-| `RequestResponsePipelineBase<TRequest, TResponse>` | Abstract base for typed pipelines |
-| `RequestResponsePipelineBehavior<TRequest, TResponse>` | Typed behavior: `handleAsync(TRequest, PipelineDelegate)` |
-| `RequestResponsePipelineDelegate<TRequest, TResponse>` | Typed delegate: `CompletionStage<TResponse> invoke(TRequest)` |
-| `RequestPipelineDelegate<TRequest>` | Fire-and-forget typed delegate: `CompletionStage<Void> invoke(TRequest)` |
+| `Pipeline<TRequest, TResponse>` | Pipeline builder: chain components via `use()`, build delegate, run async |
+| `PipelineBase<TRequest, TResponse>` | Abstract base with component registration, reverse-chain build, and `@PipelineBehaviors` annotation support |
+| `PipelineDelegate<TRequest, TResponse>` | `@FunctionalInterface`: `CompletionStage<TResponse> invoke(TRequest request)` |
+| `PipelineBehavior<TRequest, TResponse>` | Behavior interface: `CompletionStage<TResponse> handleAsync(TRequest, PipelineDelegate<TRequest, TResponse>)` |
+| `PipelineFactory` / `DefaultPipelineFactory` | Factory for creating `Pipeline<TRequest, TResponse>` instances |
+| `DefaultPipelineProvider<TRequest, TResponse>` | Default implementation resolving behaviors via `ServiceProvider` (reflection or DI) |
 | `@PipelineBehaviors` | Annotation to auto-attach behaviors by context type |
 
 **Key features:**
 - Fluent API: chain behaviors via `.use()` with lambda, class, or `@PipelineBehaviors` discovery
-- Supports both void-pipeline (`Pipeline`) and request/response pipeline (`RequestResponsePipeline`)
+- Single `Pipeline<TRequest, TResponse>` for both fire-and-forget (`Pipeline<Object, Void>`) and typed request/response scenarios
 - Delegate-based composition with reverse-chain construction (innermost executes first)
 - `ServiceProvider` abstraction enables both standalone and Spring-integrated usage
 - Async throughout via `CompletionStage`
 
 ```java
 // Create a pipeline
-Pipeline pipeline = new DefaultPipelineProvider(resolver)
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver)
     .use((ctx, next) -> next.invoke(ctx).thenRun(() -> System.out.println("Log: done")))
     .use(LoggingBehavior.class);
 
@@ -235,7 +230,7 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 | `MessageHandlerFinder` | Scans classes for `@Subscribe` methods and `Handler` implementations |
 | `DefaultHandlerContext` | Runtime handler resolution and invocation via `ServiceProvider` |
 | `MessageHandler` / `MessageHandlerFactory` | Handler wrapper and factory for per-channel dispatch |
-| `PipelineMessage` | Wraps message execution through `RequestResponsePipeline` |
+| `PipelineMessage` | Wraps message execution through `Pipeline` |
 | `MessageCache` | Centralized channel naming (defaults to FQCN, `@Channel` override) |
 | `SendOptions` / `PublishOptions` / `CallOptions` | Typed operation options |
 | `ExtendableOptions` | Base class for extensible option sets |
