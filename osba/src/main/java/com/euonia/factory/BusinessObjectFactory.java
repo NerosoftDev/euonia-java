@@ -28,18 +28,26 @@ import com.euonia.reflection.ServiceProvider;
 @SuppressWarnings("UnusedReturnValue")
 public class BusinessObjectFactory implements ObjectFactory {
 
-    private ServiceProvider provider;
+    private final ServiceProvider provider;
 
     /**
-     * Configures the BusinessObjectFactory to use the provided bean factory for object instantiation.
+     * Constructs a new BusinessObjectFactory with the specified ServiceProvider, which can be used for resolving dependencies during object creation and method invocation.
      *
-     * @param resolver the ServiceProvider to be used for resolving services, including the bean factory
-     * @return the current instance of BusinessObjectFactory
+     * @param provider the ServiceProvider to be used for resolving services
      */
-    public BusinessObjectFactory use(ServiceProvider resolver) {
-        this.provider = resolver;
-        return this;
+    public BusinessObjectFactory(ServiceProvider provider) {
+        this.provider = provider;
     }
+
+    // /**
+    //  * Configures the BusinessObjectFactory to use the provided bean factory for object instantiation.
+    //  *
+    //  * @param resolver the ServiceProvider to be used for resolving services, including the bean factory
+    //  * @return the current instance of BusinessObjectFactory
+    //  */
+    // public BusinessObjectFactory use(ServiceProvider resolver) {
+    //     return new BusinessObjectFactory(resolver);
+    // }
 
     /**
      * Creates an instance of the specified type by finding and invoking the appropriate factory method annotated with @FactoryCreate, using the provided criteria as arguments.
