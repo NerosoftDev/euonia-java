@@ -8,7 +8,7 @@ import org.springframework.web.context.annotation.RequestScope;
  * Configuration for request context related beans.
  */
 @Configuration
-public class RequestContextConfiguration {
+public class HttpContextAccessorConfiguration {
 
     @Bean
     @RequestScope
