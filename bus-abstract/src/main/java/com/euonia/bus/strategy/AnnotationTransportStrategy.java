@@ -6,7 +6,7 @@ import com.euonia.bus.annotation.ReceiveIn;
 public class AnnotationTransportStrategy implements TransportStrategy {
     private final String[] required;
 
-    public AnnotationTransportStrategy(String[] required) {
+    public AnnotationTransportStrategy(String... required) {
         this.required = required;
     }
 

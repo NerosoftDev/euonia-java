@@ -10,12 +10,7 @@ public class DefaultPipelineFactory implements PipelineFactory {
     }
 
     @Override
-    public Pipeline create() {
-        return new DefaultPipelineProvider(provider);
-    }
-
-    @Override
-    public <TRequest, TResponse> RequestResponsePipeline<TRequest, TResponse> createRequestResponse() {
-        return new DefaultRequestResponsePipelineProvider<>(provider);
+    public <C, R> Pipeline<C, R> create() {
+        return new DefaultPipelineProvider<>(provider);
     }
 }

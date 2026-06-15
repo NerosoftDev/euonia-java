@@ -14,7 +14,7 @@ class DefaultPipelineProviderTests {
 
     @Test
     void should_run_attribute_behavior_before_accumulate() {
-        DefaultPipelineProvider pipeline = new DefaultPipelineProvider(new SimpleServiceProvider());
+        DefaultPipelineProvider<TraceContext, Void> pipeline = new DefaultPipelineProvider<>(new SimpleServiceProvider());
         TraceContext context = new TraceContext();
 
         pipeline.runAsync(context, ignored -> {
@@ -31,7 +31,7 @@ class DefaultPipelineProviderTests {
         MarkerService markerService = new MarkerService();
         resolver.register(MarkerService.class, markerService);
 
-        DefaultPipelineProvider pipeline = new DefaultPipelineProvider(resolver);
+        DefaultPipelineProvider<String, Void> pipeline = new DefaultPipelineProvider<>(resolver);
         pipeline.use(ReflectionPipelineBehavior.class);
 
         pipeline.runAsync("ctx").toCompletableFuture().join();
@@ -44,11 +44,10 @@ class DefaultPipelineProviderTests {
         final List<String> trace = new ArrayList<>();
     }
 
-    static class AnnotatedPipelineBehavior implements PipelineBehavior {
+    static class AnnotatedPipelineBehavior implements PipelineBehavior<TraceContext, Void> {
         @Override
-        public CompletionStage<Void> handleAsync(Object context, PipelineDelegate next) {
-            TraceContext traceContext = (TraceContext) context;
-            traceContext.trace.add("behavior");
+        public CompletionStage<Void> handleAsync(TraceContext context, PipelineDelegate<TraceContext, Void> next) {
+            context.trace.add("behavior");
             return next.invoke(context);
         }
     }
@@ -58,14 +57,14 @@ class DefaultPipelineProviderTests {
     }
 
     static class ReflectionPipelineBehavior {
-        private final PipelineDelegate next;
+        private final PipelineDelegate<String, Void> next;
 
-        ReflectionPipelineBehavior(PipelineDelegate next) {
+        ReflectionPipelineBehavior(PipelineDelegate<String, Void> next) {
             this.next = next;
         }
 
-        public CompletionStage<Void> handleAsync(Object context, MarkerService markerService) {
-            markerService.value = String.valueOf(context);
+        public CompletionStage<Void> handleAsync(String context, MarkerService markerService) {
+            markerService.value = context;
             return next.invoke(context);
         }
     }

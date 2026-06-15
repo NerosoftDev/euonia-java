@@ -1,14 +1,14 @@
 
 # Pipeline Module
 
-A lightweight, async middleware pipeline framework for Java, inspired by ASP.NET Core's pipeline pattern. Enables chainable request/response processing with behaviors, delegates, and pluggable dependency injection.
+A lightweight, async middleware pipeline framework for Java, inspired by ASP.NET Core's pipeline pattern. Provides a unified `Pipeline<TRequest, TResponse>` builder with generic behaviors, delegates, and pluggable dependency injection.
 
 ---
 
 ## Architecture
 
 ```
-Request / Context
+  TRequest
         │
         ▼
 ┌──────────────────────┐
@@ -18,50 +18,34 @@ Request / Context
 ├──────────────────────┤
 │  Pipeline.use(…)     │  ← Behavior N
 ├──────────────────────┤
-│  Accumulate / Handler│  ← Terminal handler (user logic)
+│  Terminal Handler    │  ← PipelineDelegate<TRequest, TResponse>
 └──────────────────────┘
         │
         ▼
-  Response / Void
+  TResponse
 ```
 
-Each behavior is a **middleware** that receives the context and a `next` delegate. Behaviors can:
+Each behavior is a **middleware** that receives the request and a `next` delegate. Behaviors can:
 - Execute code **before** the next component
 - Execute code **after** the next component (via the returned `CompletionStage`)
 - Short-circuit the pipeline by **not calling** `next.invoke()`
-- **Modify** the context before passing it downstream
+- **Transform** the response before returning upstream
+
+For fire-and-forget scenarios, use `Pipeline<Object, Void>` — the pipeline returns `CompletionStage<Void>`.
 
 ---
 
 ## Core Concepts
 
-### Pipeline (Fire-and-Forget)
-
 | Interface / Class | Description |
 |-------------------|-------------|
-| `Pipeline` | Builder interface — chain behaviors via `.use()`, then `.build()` or `.runAsync()` |
-| `PipelineBase` | Abstract implementation with component list, reverse-chain build, and `@PipelineBehaviors` support |
-| `PipelineDelegate` | `FunctionalInterface` — `CompletionStage<Void> invoke(Object context)` |
-| `PipelineBehavior` | Behavior contract — `CompletionStage<Void> handleAsync(Object, PipelineDelegate)` |
-
-### RequestResponsePipeline (Typed Request/Response)
-
-| Interface / Class | Description |
-|-------------------|-------------|
-| `RequestResponsePipeline<TRequest, TResponse>` | Builder for typed request/response pipelines |
-| `RequestResponsePipelineBase<TRequest, TResponse>` | Abstract implementation |
-| `RequestResponsePipelineDelegate<TRequest, TResponse>` | `CompletionStage<TResponse> invoke(TRequest)` |
-| `RequestResponsePipelineBehavior<TRequest, TResponse>` | `CompletionStage<TResponse> handleAsync(TRequest, PipelineDelegate)` |
-| `RequestPipelineDelegate<TRequest>` | Fire-and-forget variant: `CompletionStage<Void> invoke(TRequest)` |
-
-### Infrastructure
-
-| Interface / Class | Description |
-|-------------------|-------------|
-| `PipelineFactory` | Creates `Pipeline` or `RequestResponsePipeline` instances |
+| `Pipeline<TRequest, TResponse>` | Builder interface — chain behaviors via `.use()`, then `.build()` or `.runAsync()` |
+| `PipelineBase<TRequest, TResponse>` | Abstract implementation with component list, reverse-chain build, and `@PipelineBehaviors` support |
+| `PipelineDelegate<TRequest, TResponse>` | `@FunctionalInterface` — `CompletionStage<TResponse> invoke(TRequest request)` |
+| `PipelineBehavior<TRequest, TResponse>` | Behavior contract — `CompletionStage<TResponse> handleAsync(TRequest context, PipelineDelegate<TRequest, TResponse> next)` |
+| `PipelineFactory` | Creates `Pipeline<TRequest, TResponse>` instances |
 | `DefaultPipelineFactory` | Default factory backed by `ServiceProvider` |
-| `DefaultPipelineProvider` | Default `Pipeline` implementation |
-| `DefaultRequestResponsePipelineProvider<TRequest, TResponse>` | Default typed pipeline implementation |
+| `DefaultPipelineProvider<TRequest, TResponse>` | Default `Pipeline` implementation with reflection-based behavior resolution |
 | `@PipelineBehaviors` | Annotation to auto-discover behaviors from context type |
 | `ServiceProvider` | Abstraction for DI — standalone (`SimpleServiceProvider`) or Spring integration |
 
@@ -79,7 +63,7 @@ Each behavior is a **middleware** that receives the context and a `next` delegat
 </dependency>
 ```
 
-### Step 2: Basic Pipeline
+### Step 2: Fire-and-Forget Pipeline
 
 ```java
 import com.euonia.pipeline.*;
@@ -87,30 +71,24 @@ import com.euonia.reflection.SimpleServiceProvider;
 
 // Create resolver and pipeline
 var resolver = new SimpleServiceProvider();
-        Pipeline pipeline = new DefaultPipelineProvider(resolver)
-                .use((ctx, next) -> {
-                    System.out.println("Before: " + ctx);
-                    return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
-                });
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver)
+        .use((ctx, next) -> {
+            System.out.println("Before: " + ctx);
+            return next.invoke(ctx).thenRun(() -> System.out.println("After: " + ctx));
+        });
 
 // Run
-pipeline.
-
-        runAsync("Hello, Pipeline!")
-    .
-
-        toCompletableFuture()
-    .
-
-        join();
+pipeline.runAsync("Hello, Pipeline!")
+        .toCompletableFuture()
+        .join();
 ```
 
 ### Step 3: Custom Behavior Class
 
 ```java
-public class LoggingBehavior implements PipelineBehavior {
+public class LoggingBehavior<TRequest, TResponse> implements PipelineBehavior<TRequest, TResponse> {
     @Override
-    public CompletionStage<Void> handleAsync(Object context, PipelineDelegate next) {
+    public CompletionStage<TResponse> handleAsync(TRequest context, PipelineDelegate<TRequest, TResponse> next) {
         long start = System.nanoTime();
         return next.invoke(context).thenRun(() -> {
             long elapsed = (System.nanoTime() - start) / 1_000_000;
@@ -120,7 +98,7 @@ public class LoggingBehavior implements PipelineBehavior {
 }
 
 // Usage
-Pipeline pipeline = new DefaultPipelineProvider(resolver)
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver)
     .use(LoggingBehavior.class)
     .use((ctx, next) -> {
         // business logic
@@ -128,11 +106,10 @@ Pipeline pipeline = new DefaultPipelineProvider(resolver)
     });
 ```
 
-### Step 4: Request/Response Pipeline
+### Step 4: Typed Request/Response Pipeline
 
 ```java
-DefaultRequestResponsePipelineProvider<Integer, Integer> pipeline =
-    new DefaultRequestResponsePipelineProvider<>(resolver);
+Pipeline<Integer, Integer> pipeline = new DefaultPipelineProvider<>(resolver);
 
 pipeline.use(PlusOneBehavior.class);
 
@@ -145,10 +122,10 @@ int result = pipeline.runAsync(2, request -> CompletableFuture.completedFuture(r
 
 **PlusOneBehavior:**
 ```java
-public class PlusOneBehavior implements RequestResponsePipelineBehavior<Integer, Integer> {
+public class PlusOneBehavior implements PipelineBehavior<Integer, Integer> {
     @Override
     public CompletionStage<Integer> handleAsync(Integer context,
-                                                 RequestResponsePipelineDelegate<Integer, Integer> next) {
+                                                 PipelineDelegate<Integer, Integer> next) {
         return next.invoke(context).thenApply(value -> value + 1);
     }
 }
@@ -162,13 +139,15 @@ public class PlusOneBehavior implements RequestResponsePipelineBehavior<Integer,
 
 ```java
 // Inline lambda (fire-and-forget)
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver);
 pipeline.use((ctx, next) -> {
     System.out.println("Processing: " + ctx);
     return next.invoke(ctx);
 });
 
-// Inline lambda (request/response)
-requestResponsePipeline.use((req, next) ->
+// Inline lambda (typed request/response)
+Pipeline<String, String> typedPipeline = new DefaultPipelineProvider<>(resolver);
+typedPipeline.use((String req, PipelineDelegate<String, String> next) ->
     next.invoke(req).thenApply(resp -> "Wrapped: " + resp)
 );
 ```
@@ -190,9 +169,9 @@ resolver.register(SuffixService.class, new SuffixService("-ok"));
 
 // Pipeline behavior with auto-resolved dependency
 public class ReflectionBehavior {
-    private final RequestResponsePipelineDelegate<String, String> next;
+    private final PipelineDelegate<String, String> next;
 
-    public ReflectionBehavior(RequestResponsePipelineDelegate<String, String> next) {
+    public ReflectionBehavior(PipelineDelegate<String, String> next) {
         this.next = next;
     }
 
@@ -202,6 +181,7 @@ public class ReflectionBehavior {
 }
 
 // Usage
+Pipeline<String, String> pipeline = new DefaultPipelineProvider<>(resolver);
 pipeline.use(ReflectionBehavior.class);
 String result = pipeline.runAsync("input", CompletableFuture::completedFuture)
     .toCompletableFuture()
@@ -220,6 +200,7 @@ public class CreateOrderCommand {
 }
 
 // When you call runAsync, the annotation is discovered automatically:
+Pipeline<CreateOrderCommand, Void> pipeline = new DefaultPipelineProvider<>(resolver);
 pipeline.runAsync(new CreateOrderCommand())
     .toCompletableFuture()
     .join();
@@ -229,14 +210,14 @@ pipeline.runAsync(new CreateOrderCommand())
 ### Fluent Builder with Composite Pipeline
 
 ```java
-Pipeline pipeline = resolver.create()  // via PipelineFactory
+Pipeline<Object, Void> pipeline = pipelineFactory.<Object, Void>create()
     .use(AuthenticationBehavior.class)
     .use(AuthorizationBehavior.class)
     .use(ValidationBehavior.class, 0)  // insert at specific index
     .use((ctx, next) -> next.invoke(ctx))
     .build();  // freezes the pipeline, clears component list
 
-pipeline.invoke(context).toCompletableFuture().join();
+pipeline.build().invoke(context).toCompletableFuture().join();
 ```
 
 ### Resolver Dependency Parameters in `handle` / `handleAsync`
@@ -246,15 +227,15 @@ Behaviors written as plain classes (not implementing `PipelineBehavior`) are res
 ```java
 // Plain class — method name must be "handle" or "handleAsync"
 // Return type must be CompletionStage
-public class MyBehavior {
-    private final PipelineDelegate next;
+public class MyBehavior<TRequest, TResponse> {
+    private final PipelineDelegate<TRequest, TResponse> next;
 
-    public MyBehavior(PipelineDelegate next) {
+    public MyBehavior(PipelineDelegate<TRequest, TResponse> next) {
         this.next = next;
     }
 
     // context + auto-injected services
-    public CompletionStage<Void> handleAsync(MyContext ctx, LoggerService logger, MetricsService metrics) {
+    public CompletionStage<TResponse> handleAsync(TRequest ctx, LoggerService logger, MetricsService metrics) {
         logger.info("Processing " + ctx);
         metrics.increment();
         return next.invoke(ctx);
@@ -284,16 +265,17 @@ Behaviors can inject any Spring bean through constructor parameters. The `Applic
 
 ```java
 @Component
-public class SpringLoggingBehavior {
-    private final PipelineDelegate next;
+public class SpringLoggingBehavior implements PipelineBehavior<Object, Void> {
+    private final PipelineDelegate<Object, Void> next;
     private final LoggerService logger;  // Spring bean
 
-    public SpringLoggingBehavior(PipelineDelegate next, LoggerService logger) {
+    public SpringLoggingBehavior(PipelineDelegate<Object, Void> next, LoggerService logger) {
         this.next = next;
         this.logger = logger;
     }
 
-    public CompletionStage<Void> handleAsync(Object ctx) {
+    @Override
+    public CompletionStage<Void> handleAsync(Object ctx, PipelineDelegate<Object, Void> next) {
         logger.info("Pipeline processing: " + ctx);
         return next.invoke(ctx);
     }
@@ -305,7 +287,7 @@ public class SpringLoggingBehavior {
 private PipelineFactory pipelineFactory;
 
 public void execute() {
-    Pipeline pipeline = pipelineFactory.create()
+    Pipeline<MyCommand, Void> pipeline = pipelineFactory.<MyCommand, Void>create()
         .use(SpringLoggingBehavior.class)
         .use(TransactionalBehavior.class);
 
@@ -317,18 +299,19 @@ public void execute() {
 
 ## API Reference
 
-### `Pipeline`
+### `Pipeline<TRequest, TResponse>`
 
 ```java
-public interface Pipeline {
-    Pipeline use(Function<PipelineDelegate, PipelineDelegate> component);
-    Pipeline use(Function<PipelineDelegate, PipelineDelegate> component, int index);
-    Pipeline use(BiFunction<Object, PipelineDelegate, CompletionStage<Void>> handler);
-    Pipeline use(Class<?> type, Object... args);
-    Pipeline useOf(Class<?> contextType, boolean useAheadOfOthers);
-    PipelineDelegate build();
-    CompletionStage<Void> runAsync(Object context);
-    CompletionStage<Void> runAsync(Object context, Function<Object, CompletionStage<Void>> accumulate);
+public interface Pipeline<TRequest, TResponse> {
+    Pipeline<TRequest, TResponse> use(Function<PipelineDelegate<TRequest, TResponse>, PipelineDelegate<TRequest, TResponse>> component);
+    Pipeline<TRequest, TResponse> use(Function<PipelineDelegate<TRequest, TResponse>, PipelineDelegate<TRequest, TResponse>> component, int index);
+    Pipeline<TRequest, TResponse> use(PipelineBehavior<TRequest, TResponse> behavior);
+    Pipeline<TRequest, TResponse> use(BiFunction<TRequest, PipelineDelegate<TRequest, TResponse>, CompletionStage<TResponse>> handler);
+    Pipeline<TRequest, TResponse> use(Class<?> type, Object... args);
+    Pipeline<TRequest, TResponse> useOf(Class<?> contextType, boolean useAheadOfOthers);
+    PipelineDelegate<TRequest, TResponse> build();
+    CompletionStage<TResponse> runAsync(TRequest context);
+    CompletionStage<TResponse> runAsync(TRequest context, Function<TRequest, CompletionStage<TResponse>> accumulate);
 }
 ```
 
@@ -336,29 +319,98 @@ public interface Pipeline {
 |--------|-------------|
 | `use(component)` | Appends a pipeline component |
 | `use(component, index)` | Inserts a component at the given position |
-| `use(handler)` | Appends a lambda handler `(ctx, next) → CompletionStage<Void>` |
+| `use(behavior)` | Appends a `PipelineBehavior` instance |
+| `use(handler)` | Appends a lambda handler `(ctx, next) → CompletionStage<TResponse>` |
 | `use(type, args)` | Appends a component resolved from the given class with constructor arguments |
 | `useOf(contextType, ahead)` | Auto-discovers `@PipelineBehaviors` annotation on the context type |
 | `build()` | Freezes the pipeline and returns the outermost delegate |
 | `runAsync(context)` | Shorthand: calls `useOf` then `build().invoke(context)` |
 | `runAsync(context, accumulate)` | Shorthand with terminal handler |
 
-### `PipelineBehavior`
+### `PipelineBehavior<TRequest, TResponse>`
 
 ```java
 @FunctionalInterface
-public interface PipelineBehavior {
-    CompletionStage<Void> handleAsync(Object context, PipelineDelegate next);
+public interface PipelineBehavior<TRequest, TResponse> {
+    CompletionStage<TResponse> handleAsync(TRequest context, PipelineDelegate<TRequest, TResponse> next);
 }
 ```
 
-### `RequestResponsePipeline<TRequest, TResponse>`
-
-Same fluent API as `Pipeline`, but typed with `TRequest` / `TResponse`:
+### `PipelineDelegate<TRequest, TResponse>`
 
 ```java
-CompletionStage<TResponse> runAsync(TRequest context);
-CompletionStage<TResponse> runAsync(TRequest context, Function<TRequest, CompletionStage<TResponse>> accumulate);
+@FunctionalInterface
+public interface PipelineDelegate<TRequest, TResponse> {
+    CompletionStage<TResponse> invoke(TRequest request);
+}
+```
+
+### `PipelineFactory`
+
+```java
+public interface PipelineFactory {
+    <TRequest, TResponse> Pipeline<TRequest, TResponse> create();
+}
+```
+
+A single `create()` method returns a generic `Pipeline<TRequest, TResponse>` — usable for both fire-and-forget (`Pipeline<Object, Void>`) and typed request/response scenarios.
+
+---
+
+## Design & Implementation Details
+
+### Reverse-Chain Construction
+
+When `.build()` is called, components are assembled **inside-out** — the last registered component wraps the previous ones. This means:
+
+```java
+pipeline.use(A).use(B).use(C);
+// Execution order: A → B → C
+// Construction: C wraps B wraps A
+```
+
+### Behavior Resolution Priority
+
+1. **`PipelineBehavior` interface** — if the class implements `PipelineBehavior`, it is resolved via `ServiceProvider.getServiceOrCreate()` and invoked through the interface contract.
+2. **Reflection-based** — otherwise, the framework searches for `handle` or `handleAsync` methods (returning `CompletionStage`). Constructor arguments are populated by prepending the `next` delegate.
+
+### Annotation-Driven Auto-Discovery
+
+The `@PipelineBehaviors` annotation enables **declarative pipeline configuration**:
+
+```java
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface PipelineBehaviors {
+    Class<?>[] value();
+}
+```
+
+When `runAsync(context)` is called (or `useOf(contextType, true)` explicitly), the annotation on the context's class is scanned. Behaviors listed in the annotation are registered **ahead of** all manually registered components.
+
+---
+
+## Testing
+
+The pipeline module is designed for testability:
+
+```java
+// Unit test with SimpleServiceProvider
+var resolver = new SimpleServiceProvider();
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver);
+
+var results = new ArrayList<String>();
+pipeline.use((ctx, next) -> {
+    results.add("before");
+    return next.invoke(ctx).thenRun(() -> results.add("after"));
+});
+pipeline.use((ctx, next) -> {
+    results.add("handle");
+    return next.invoke(ctx);
+});
+
+pipeline.runAsync("test").toCompletableFuture().join();
+assertEquals(List.of("before", "handle", "after"), results);
 ```
 
 ---

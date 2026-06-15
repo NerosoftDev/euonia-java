@@ -2,6 +2,7 @@ package com.euonia.reflection;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -35,12 +36,22 @@ public class DelegateServiceProvider implements ServiceProvider {
     }
 
     @Override
+    public <T> Optional<T> getService(Class<T> type, String serviceName) {
+        return Optional.ofNullable((T) beanFactory.apply(type));
+    }
+
+    @Override
     public <T> T getRequiredService(Class<T> type) {
         T instance = (T) beanFactory.apply(type);
         if (instance == null) {
             throw new IllegalStateException("Required service not found: " + type.getName());
         }
         return instance;
+    }
+
+    @Override
+    public <T> List<T> getServices(Class<T> type) {
+        return List.of();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.euonia.bus;
+package com.euonia.bus.options;
 
 import com.euonia.bus.convention.MessageConvention;
 import com.euonia.bus.strategy.TransportStrategy;

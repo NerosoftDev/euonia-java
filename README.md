@@ -18,6 +18,7 @@ graph TD
         DDD --> UoW
         DDD --> Pipeline
         OSBA --> Core
+        UoW --> Core
         Pipeline --> Core
         Spring --> Core
         Spring --> UoW
@@ -92,33 +93,28 @@ graph TD
 | `IUnitOfWorkAccessor` | 访问当前激活的 UoW 上下文 |
 
 ### Pipeline（euonia-pipeline）
-> 受 ASP.NET Core 启发的中间件管道框架：支持可链式的请求/响应处理、行为、委托与依赖注入集成。
+> 受 ASP.NET Core 启发的中间件管道框架：统一的 `Pipeline<TRequest, TResponse>`，支持可链式的行为拼装、委托与依赖注入集成。
 
 | 接口 / 类 | 说明 |
 |-------------------|-------------|
-| `Pipeline` | 管道构建器：通过 `use()` 链接组件、构建委托并异步执行 |
-| `PipelineBase` | 抽象基类：组件注册、反向链构建、`@PipelineBehaviors` 注解支持 |
-| `PipelineDelegate` | `FunctionalInterface`：`CompletionStage<Void> invoke(Object context)` |
-| `PipelineBehavior` | 行为接口：`CompletionStage<Void> handleAsync(Object, PipelineDelegate)` |
-| `PipelineFactory` / `DefaultPipelineFactory` | 创建 `Pipeline` 与 `RequestResponsePipeline` 的工厂 |
-| `DefaultPipelineProvider` | 默认实现，通过 `ServiceProvider` 解析行为（反射或 DI） |
-| `RequestResponsePipeline<TRequest, TResponse>` | 强类型请求/响应管道，支持 `runAsync(TRequest)` |
-| `RequestResponsePipelineBase<TRequest, TResponse>` | 强类型管道抽象基类 |
-| `RequestResponsePipelineBehavior<TRequest, TResponse>` | 强类型行为：`handleAsync(TRequest, PipelineDelegate)` |
-| `RequestResponsePipelineDelegate<TRequest, TResponse>` | 强类型委托：`CompletionStage<TResponse> invoke(TRequest)` |
-| `RequestPipelineDelegate<TRequest>` | 无返回的强类型委托：`CompletionStage<Void> invoke(TRequest)` |
+| `Pipeline<TRequest, TResponse>` | 管道构建器：通过 `use()` 链接组件、构建委托并异步执行 |
+| `PipelineBase<TRequest, TResponse>` | 抽象基类：组件注册、反向链构建、`@PipelineBehaviors` 注解支持 |
+| `PipelineDelegate<TRequest, TResponse>` | `@FunctionalInterface`：`CompletionStage<TResponse> invoke(TRequest request)` |
+| `PipelineBehavior<TRequest, TResponse>` | 行为接口：`CompletionStage<TResponse> handleAsync(TRequest, PipelineDelegate<TRequest, TResponse>)` |
+| `PipelineFactory` / `DefaultPipelineFactory` | 创建 `Pipeline<TRequest, TResponse>` 的工厂 |
+| `DefaultPipelineProvider<TRequest, TResponse>` | 默认实现，通过 `ServiceProvider` 解析行为（反射或 DI） |
 | `@PipelineBehaviors` | 按上下文类型自动附加行为的注解 |
 
 **关键特性：**
 - Fluent API：支持通过 `.use()` 以 lambda、类或 `@PipelineBehaviors` 自动发现方式拼装行为
-- 同时支持无返回管道（`Pipeline`）和请求/响应管道（`RequestResponsePipeline`）
+- 单一 `Pipeline<TRequest, TResponse>` 同时覆盖即发即忘（`Pipeline<Object, Void>`）和类型化请求/响应场景
 - 基于委托的组合，采用反向链构建（最内层先执行）
 - `ServiceProvider` 抽象支持独立运行与 Spring 集成
 - 全链路异步（`CompletionStage`）
 
 ```java
 // 创建一个管道
-Pipeline pipeline = new DefaultPipelineProvider(resolver)
+Pipeline<Object, Void> pipeline = new DefaultPipelineProvider<>(resolver)
     .use((ctx, next) -> next.invoke(ctx).thenRun(() -> System.out.println("Log: done")))
     .use(LoggingBehavior.class);
 
@@ -234,7 +230,7 @@ pipeline.runAsync(new MyContext()).toCompletableFuture().join();
 | `MessageHandlerFinder` | 扫描 `@Subscribe` 方法与 `Handler` 实现 |
 | `DefaultHandlerContext` | 通过 `ServiceProvider` 在运行时解析和调用处理器 |
 | `MessageHandler` / `MessageHandlerFactory` | 处理器包装与工厂，支持按通道分发 |
-| `PipelineMessage` | 将消息执行包装为 `RequestResponsePipeline` |
+| `PipelineMessage` | 将消息执行包装为 `Pipeline` |
 | `MessageCache` | 集中式通道命名（默认全限定类名，`@Channel` 可覆盖） |
 | `SendOptions` / `PublishOptions` / `CallOptions` | 强类型操作选项 |
 | `ExtendableOptions` | 可扩展选项基类 |
