@@ -1,7 +1,10 @@
 package com.euonia.application;
 
+import com.euonia.bus.Bus;
 import com.euonia.reflection.ServiceProvider;
 import com.euonia.security.UserPrincipal;
+
+import java.util.Optional;
 
 /**
  * BaseApplicationService is an abstract class that provides common functionality for application services.
@@ -10,17 +13,40 @@ import com.euonia.security.UserPrincipal;
  */
 public abstract class BaseApplicationService implements ApplicationService {
 
-    protected final ServiceProvider serviceProvider;
+    protected final ServiceProvider provider;
+    protected final Bus bus;
 
-    protected BaseApplicationService(ServiceProvider serviceProvider) {
-        this.serviceProvider = serviceProvider;
+    protected BaseApplicationService(ServiceProvider provider) {
+        this.provider = provider;
+        this.bus = provider.getService(Bus.class).orElse(null);
     }
 
-    protected <T> T getService(Class<T> type) {
-        return serviceProvider.getService(type).orElse(null);
+    /**
+     * Resolves a service of the specified type from the ServiceProvider.
+     *
+     * @param type The class type of the service to resolve.
+     * @param <T>  The type of the service to resolve.
+     * @return An Optional containing the resolved service, or an empty Optional if the service is not available.
+     */
+    protected <T> Optional<T> getService(Class<T> type) {
+        return provider.getService(type);
     }
 
+    /**
+     * Gets the currently authenticated user from the ServiceProvider.
+     *
+     * @return The currently authenticated user, or null if not available.
+     */
     protected UserPrincipal getUser() {
-        return serviceProvider.getService(UserPrincipal.class).orElse(null);
+        return getService(UserPrincipal.class).orElse(null);
+    }
+
+    /**
+     * Gets the Bus service from the ServiceProvider.
+     *
+     * @return The Bus service, or null if not available.
+     */
+    protected Bus getBus() {
+        return bus;
     }
 }

@@ -1,12 +1,14 @@
 package com.euonia.reflection;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.ResolvableType;
 
 public class ApplicationContextServiceProvider implements ServiceProvider {
     private final ApplicationContext context;
@@ -18,6 +20,12 @@ public class ApplicationContextServiceProvider implements ServiceProvider {
     @Override
     public <T> Optional<T> getService(Class<T> type) {
         return Optional.ofNullable(context.getBeanProvider(type).getIfAvailable());
+    }
+
+    @Override
+    public <T> Optional<T> getService(Class<T> type, Class<?>... genericTypeArguments) {
+        var service = getServices(type, genericTypeArguments);
+        return service.isEmpty() ? Optional.empty() : Optional.of(service.get(0));
     }
 
     @Override
@@ -35,6 +43,19 @@ public class ApplicationContextServiceProvider implements ServiceProvider {
     public <T> List<T> getServices(Class<T> type) {
         return context.getBeansOfType(type, true, true)
                       .values().stream().toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> List<T> getServices(Class<T> type, Class<?>... genericTypeArguments) {
+        ResolvableType resolvableType = ResolvableType.forClassWithGenerics(type, genericTypeArguments);
+        var beans = context.getBeanNamesForType(resolvableType, true, true);
+        return Arrays.stream(beans).map(name -> {
+                         var serviceType = resolvableType.resolve();
+                         assert serviceType != null;
+                         return (T) serviceType.cast(context.getBean(name));
+                     })
+                     .toList();
     }
 
     @Override

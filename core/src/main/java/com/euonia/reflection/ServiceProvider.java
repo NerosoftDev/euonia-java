@@ -20,6 +20,16 @@ public interface ServiceProvider {
     <T> Optional<T> getService(Class<T> type);
 
     /**
+     * Retrieves a service instance of the specified type and generic type arguments.
+     *
+     * @param <T>                  the type of the service
+     * @param type                 the class of the service
+     * @param genericTypeArguments the generic type arguments of the service
+     * @return an Optional containing the service instance, or empty if not found
+     */
+    <T> Optional<T> getService(Class<T> type, Class<?>... genericTypeArguments);
+
+    /**
      * Retrieves a service instance of the specified type and service name.
      *
      * @param <T>         the type of the service
@@ -48,6 +58,16 @@ public interface ServiceProvider {
      * @return a list of service instances
      */
     <T> List<T> getServices(Class<T> type);
+
+    /**
+     * Retrieves all service instances of the specified type and generic type arguments.
+     *
+     * @param <T>                  the type of the service
+     * @param type                 the class of the service
+     * @param genericTypeArguments the generic type arguments of the service
+     * @return a list of service instances
+     */
+    <T> List<T> getServices(Class<T> type, Class<?>... genericTypeArguments);
 
     /**
      * Creates a new instance of the specified type using the provided constructor

@@ -11,8 +11,6 @@ import com.euonia.reflection.ServiceProvider;
 public class OsbaConfiguration {
     @Bean
     public ObjectFactory objectFactory(ServiceProvider resolver) {
-        var factory = new BusinessObjectFactory();
-        factory.use(resolver);
-        return factory;
+        return new BusinessObjectFactory(resolver);
     }
 }
